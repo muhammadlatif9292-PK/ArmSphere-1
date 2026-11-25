@@ -713,8 +713,8 @@ class _OrganizationCertificationsScreenState
         .where((o) => (o['status'] ?? '').toString().toUpperCase() == 'ACTIVE')
         .length;
 
-    return CrystalStageScaffold(
-      domain: ArmSphereStageDomain.events,
+    return Scaffold(
+      backgroundColor: AppTheme.voidBackground,
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
         backgroundColor: const Color(0xD90A0D14),
@@ -784,12 +784,23 @@ class _OrganizationCertificationsScreenState
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
+      body: Stack(
+        fit: StackFit.expand,
         children: [
-          _buildRequestsTab(),
-          _buildCertifyAthleteTab(),
-          _buildCertifiedOfficialsTab(),
+          const Positioned.fill(
+            child: CrystalStageBackdrop(
+              domain: ArmSphereStageDomain.events,
+              scrimOpacity: 0.78,
+            ),
+          ),
+          TabBarView(
+            controller: _tabController,
+            children: [
+              _buildRequestsTab(),
+              _buildCertifyAthleteTab(),
+              _buildCertifiedOfficialsTab(),
+            ],
+          ),
         ],
       ),
     );

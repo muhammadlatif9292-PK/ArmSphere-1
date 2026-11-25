@@ -84,7 +84,7 @@ void main() {
 
       // 3. Verify competitor identity texts
       expect(find.text('Sultan Khan'), findsOneWidget);
-      expect(find.textContaining('Official PAFF'), findsOneWidget);
+      expect(find.textContaining('Verified Competitor'), findsOneWidget);
 
       await tester.pumpWidget(const SizedBox());
       await tester.pump();

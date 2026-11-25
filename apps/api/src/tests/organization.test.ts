@@ -64,11 +64,13 @@ describe("Organization & Federation Portal API Suite", () => {
       expect(Array.isArray(orgs)).toBe(true);
       expect(orgs.length).toBeGreaterThan(0);
 
-      const paff = orgs.find((o: any) => o.slug === "paff");
-      expect(paff).toBeDefined();
-      expect(paff.name).toBe("Pakistan Armwrestling Federation (PAFF)");
+      const canonicalOrg = orgs.find((o: any) => o.slug === "armsphere-national-league");
+      expect(canonicalOrg).toBeDefined();
+      expect(canonicalOrg.name).toBe("ArmSphere National League");
       // Ensure accessCodeHash is never leaked to public consumers
-      expect(paff.accessCodeHash).toBeUndefined();
+      expect(canonicalOrg.accessCodeHash).toBeUndefined();
+      // Ensure zero fabricated federations are seeded
+      expect(orgs.find((o: any) => ["paff", "paf", "waf", "ifa"].includes(String(o.slug).toLowerCase()))).toBeUndefined();
     });
 
     it("should reject access code verification when parameters are missing", async () => {
@@ -81,13 +83,13 @@ describe("Organization & Federation Portal API Suite", () => {
     it("should reject access code verification with an invalid code", async () => {
       // First ensure canonical organizations are seeded
       await request(app).get("/organizations");
-      const paff = testDbStore.organizations.find((o) => o.slug === "paff");
-      expect(paff).toBeDefined();
+      const canonicalOrg = testDbStore.organizations.find((o) => o.slug === "armsphere-national-league");
+      expect(canonicalOrg).toBeDefined();
 
       const res = await request(app)
         .post("/organizations/verify-access")
         .send({
-          organizationId: paff.id,
+          organizationId: canonicalOrg.id,
           accessCode: "WRONG-CODE-9999",
         });
 
@@ -98,20 +100,20 @@ describe("Organization & Federation Portal API Suite", () => {
     it("should successfully verify access code and issue a 24-hour scoped token", async () => {
       // Ensure canonical organizations are seeded
       await request(app).get("/organizations");
-      const paff = testDbStore.organizations.find((o) => o.slug === "paff");
-      expect(paff).toBeDefined();
+      const canonicalOrg = testDbStore.organizations.find((o) => o.slug === "armsphere-national-league");
+      expect(canonicalOrg).toBeDefined();
 
       const res = await request(app)
         .post("/organizations/verify-access")
         .send({
-          organizationId: paff.id,
-          accessCode: "PAFF-2026-X89K",
+          organizationId: canonicalOrg.id,
+          accessCode: "ANL-2026-TEST",
         });
 
       expect(res.status).toBe(200);
       expect(res.body.token).toBeDefined();
       expect(res.body.organization).toBeDefined();
-      expect(res.body.organization.id).toBe(paff.id);
+      expect(res.body.organization.id).toBe(canonicalOrg.id);
       expect(res.body.organization.accessCodeHash).toBeUndefined();
     });
   });
@@ -131,18 +133,18 @@ describe("Organization & Federation Portal API Suite", () => {
 
     it("should successfully complete onboarding when authenticated", async () => {
       await request(app).get("/organizations");
-      const paff = testDbStore.organizations.find((o) => o.slug === "paff");
+      const canonicalOrg = testDbStore.organizations.find((o) => o.slug === "armsphere-national-league");
 
       const verifyRes = await request(app)
         .post("/organizations/verify-access")
         .send({
-          organizationId: paff.id,
-          accessCode: "PAFF-2026-X89K",
+          organizationId: canonicalOrg.id,
+          accessCode: "ANL-2026-TEST",
         });
       const orgToken = `Bearer ${verifyRes.body.token}`;
 
       const res = await request(app)
-        .post(`/organizations/${paff.id}/onboard`)
+        .post(`/organizations/${canonicalOrg.id}/onboard`)
         .set("Authorization", orgToken)
         .send({
           presidentName: "Qaiser Khan Niazi",
@@ -202,24 +204,24 @@ describe("Organization & Federation Portal API Suite", () => {
 
     it("should allow SYSTEM_ADMIN to rotate an organization access code", async () => {
       await request(app).get("/organizations");
-      const paff = testDbStore.organizations.find((o) => o.slug === "paff");
+      const canonicalOrg = testDbStore.organizations.find((o) => o.slug === "armsphere-national-league");
 
       const rotateRes = await request(app)
-        .post(`/admin/organizations/${paff.id}/rotate-code`)
+        .post(`/admin/organizations/${canonicalOrg.id}/rotate-code`)
         .set("Authorization", adminToken)
         .send({
-          newCode: "PAFF-2026-ROTATED-99",
+          newCode: "ANL-2026-ROTATED-99",
         });
 
       expect(rotateRes.status).toBe(200);
-      expect(rotateRes.body.plainAccessCode).toBe("PAFF-2026-ROTATED-99");
+      expect(rotateRes.body.plainAccessCode).toBe("ANL-2026-ROTATED-99");
 
       // Old code should now be rejected
       const oldVerify = await request(app)
         .post("/organizations/verify-access")
         .send({
-          organizationId: paff.id,
-          accessCode: "PAFF-2026-X89K",
+          organizationId: canonicalOrg.id,
+          accessCode: "ANL-2026-TEST",
         });
       expect(oldVerify.status).toBe(401);
 
@@ -227,8 +229,8 @@ describe("Organization & Federation Portal API Suite", () => {
       const newVerify = await request(app)
         .post("/organizations/verify-access")
         .send({
-          organizationId: paff.id,
-          accessCode: "PAFF-2026-ROTATED-99",
+          organizationId: canonicalOrg.id,
+          accessCode: "ANL-2026-ROTATED-99",
         });
       expect(newVerify.status).toBe(200);
     });
@@ -242,7 +244,7 @@ describe("Organization & Federation Portal API Suite", () => {
       testDbStore.events.push(
         {
           id: "11111111-1111-1111-1111-111111111111",
-          name: "PAFF National Cup",
+          name: "ArmSphere National Cup",
           status: "UPCOMING",
           organizationId: orgAId,
           startDate: new Date("2026-12-01"),
@@ -261,7 +263,7 @@ describe("Organization & Federation Portal API Suite", () => {
         .set("Authorization", athleteToken);
       expect(resA.status).toBe(200);
       expect(resA.body.length).toBe(1);
-      expect(resA.body[0].name).toBe("PAFF National Cup");
+      expect(resA.body[0].name).toBe("ArmSphere National Cup");
 
       const resB = await request(app)
         .get(`/tournaments/events?organizationId=${orgBId}`)

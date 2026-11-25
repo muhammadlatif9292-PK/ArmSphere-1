@@ -10,6 +10,7 @@ import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../tournament/services/tournament_offline_store.dart';
 import '../../../core/widgets/profile_qr_matrix_view.dart';
 import '../widgets/biometric_settings_tile.dart';
 import '../../../core/providers/athlete_provider.dart';

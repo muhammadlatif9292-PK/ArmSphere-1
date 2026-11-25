@@ -2090,16 +2090,23 @@ class TournamentOfflineStore {
   /// `local_my_registrations` in Hive, `tournament['myRegistration']`,
   /// `tournament['appliedAthletes']`, and `myRegistrations` from provider state.
   static Map<String, dynamic>? findAthleteRegistrationForTournament({
-    required Map<String, dynamic> tournament,
+    Map<String, dynamic>? tournament,
+    String? tournamentId,
     String? tournamentIdOverride,
+    String? athleteId,
+    String? userId,
+    String? profileQrCode,
     Map<String, dynamic>? userProfile,
     Map<String, dynamic>? athleteProfile,
     List<Map<String, dynamic>>? myRegistrations,
     HiveStorage? hive,
   }) {
-    final tournamentId =
-        (tournamentIdOverride ?? tournament['id'] ?? '').toString().trim();
-    if (tournamentId.isEmpty) return null;
+    final resolvedTournament = tournament ?? const <String, dynamic>{};
+    final resolvedTournamentId =
+        (tournamentIdOverride ?? tournamentId ?? resolvedTournament['id'] ?? '')
+            .toString()
+            .trim();
+    if (resolvedTournamentId.isEmpty) return null;
 
     final candidateIds = <String>{};
     final candidateQrs = <String>{};
@@ -2116,6 +2123,10 @@ class TournamentOfflineStore {
       final s = (val ?? '').toString().trim();
       if (s.isNotEmpty) candidateQrs.add(s);
     }
+
+    addCandidateId(athleteId);
+    addCandidateId(userId);
+    addCandidateQr(profileQrCode);
 
     if (userProfile != null) {
       addCandidateId(userProfile['id']);
@@ -2199,7 +2210,7 @@ class TournamentOfflineStore {
           : (wc.isNotEmpty ? '$wc • $armFormatted' : armFormatted);
       return <String, dynamic>{
         ...raw,
-        'eventId': (raw['eventId'] ?? tournamentId).toString(),
+        'eventId': (raw['eventId'] ?? resolvedTournamentId).toString(),
         'weightClass': wc,
         'weightCategory': wc,
         'arm': armFormatted,
@@ -2218,7 +2229,7 @@ class TournamentOfflineStore {
             final map = Map<String, dynamic>.from(item);
             final evtId =
                 (map['eventId'] ?? map['tournamentId'] ?? '').toString().trim();
-            if (evtId == tournamentId && matchesCurrentAthlete(map)) {
+            if (evtId == resolvedTournamentId && matchesCurrentAthlete(map)) {
               return normalizeFound(map);
             }
           }
@@ -2227,8 +2238,8 @@ class TournamentOfflineStore {
     }
 
     // 2. Check tournament['myRegistration'] from server
-    if (tournament['myRegistration'] is Map) {
-      final myReg = Map<String, dynamic>.from(tournament['myRegistration'] as Map);
+    if (resolvedTournament['myRegistration'] is Map) {
+      final myReg = Map<String, dynamic>.from(resolvedTournament['myRegistration'] as Map);
       final status = (myReg['status'] ?? '').toString().toUpperCase();
       if (status != 'REJECTED' && status != 'CANCELLED') {
         return normalizeFound(myReg);
@@ -2236,8 +2247,8 @@ class TournamentOfflineStore {
     }
 
     // 3. Check tournament['appliedAthletes']
-    if (tournament['appliedAthletes'] is List) {
-      for (final item in (tournament['appliedAthletes'] as List).whereType<Map>()) {
+    if (resolvedTournament['appliedAthletes'] is List) {
+      for (final item in (resolvedTournament['appliedAthletes'] as List).whereType<Map>()) {
         final map = Map<String, dynamic>.from(item);
         if (matchesCurrentAthlete(map)) {
           return normalizeFound(map);
@@ -2250,7 +2261,7 @@ class TournamentOfflineStore {
       for (final reg in myRegistrations) {
         final evtId =
             (reg['eventId'] ?? reg['tournamentId'] ?? '').toString().trim();
-        if (evtId == tournamentId && matchesCurrentAthlete(reg)) {
+        if (evtId == resolvedTournamentId && matchesCurrentAthlete(reg)) {
           return normalizeFound(reg);
         }
       }

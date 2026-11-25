@@ -18,8 +18,10 @@ import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/providers/dependency_providers.dart';
 import '../../../core/api/offline_sync.dart';
 import '../../../core/providers/tournament_provider.dart';
+import '../../../core/providers/athlete_provider.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../../core/providers/visual_preferences_provider.dart';
+import '../../../core/widgets/crystal_slash_painter.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
@@ -2236,7 +2238,10 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
       data: (tables) {
         final filteredTables = tables.where((t) => _matchesCategory(
           _selectedCategory,
-          t['weightClass']?.toString() ?? '',
+          [
+            t['weightClass']?.toString() ?? '',
+            t['arm']?.toString() ?? '',
+          ].where((s) => s.isNotEmpty).join(' '),
           t['division']?.toString() ?? '',
         )).toList();
 
@@ -2395,15 +2400,27 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
 
   bool _matchesCategory(String filter, String weightClassFormatted, String division) {
     if (filter == 'ALL') return true;
-    final f = filter.toUpperCase().replaceAll(' ', '');
-    final w = weightClassFormatted.toUpperCase().replaceAll(' ', '');
-    final d = division.toUpperCase().replaceAll(' ', '');
-    if (w.contains(f) || d.contains(f)) return true;
+    String normalize(String raw) => raw
+        .toUpperCase()
+        .replaceAll(RegExp(r'[•·|/,]'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
 
-    final tokens = filter.toUpperCase().split(' ').where((s) => s.isNotEmpty);
-    return tokens.every((token) =>
-        weightClassFormatted.toUpperCase().contains(token) ||
-        division.toUpperCase().contains(token));
+    final normFilter = normalize(filter);
+    final normWeight = normalize(weightClassFormatted);
+    final normDiv = normalize(division);
+
+    final fCompact = normFilter.replaceAll(' ', '');
+    final wCompact = normWeight.replaceAll(' ', '');
+    final dCompact = normDiv.replaceAll(' ', '');
+    if (wCompact.contains(fCompact) || dCompact.contains(fCompact)) return true;
+
+    final tokens = normFilter
+        .split(' ')
+        .where((s) => s.isNotEmpty && s != 'ARM');
+    return tokens.every(
+      (token) => normWeight.contains(token) || normDiv.contains(token),
+    );
   }
 
   Color _resolveArenaStatusColor(String status) {

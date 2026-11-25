@@ -53,6 +53,15 @@ void main() {
       'location': 'Titanium Combat Arena',
       'city': 'Toronto',
       'registrationFeeCents': 5000, // CAD $50.00
+      'weightCategories': [
+        {
+          'id': 'wc_85',
+          'label': '-85kg',
+          'division': 'SENIOR',
+          'arm': 'BOTH',
+          'enabled': true,
+        },
+      ],
     };
 
     final authenticatedAuth = AuthState(
@@ -92,10 +101,16 @@ void main() {
       expect(find.text('REGISTRATION SUMMARY'), findsOneWidget);
       expect(find.text('SANCTIONED ENTRY'), findsOneWidget);
 
-      // Initial state: Senior, -85kg, Right Arm (1 Bracket)
-      expect(find.textContaining('Senior (Open) • -85kg • Right Arm (1 Bracket)'), findsOneWidget);
-      expect(find.text('Division Entry Fee'), findsOneWidget);
-      expect(find.text('CAD \$50'), findsNWidgets(3)); // Event overview, breakdown row, and total due
+      // Initial state: Senior, -85kg, Right Arm
+      expect(
+        find.descendant(
+          of: summaryCardFinder,
+          matching: find.textContaining('-85kg • Right Arm'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Accompanied Spectator Guests'), findsOneWidget);
+      expect(find.text('CAD \$50'), findsWidgets);
 
       // Verify Total Due in summary card matches authoritative event fee
       final totalFeeFinder = find.byKey(const ValueKey('registration_total_fee_text'));
@@ -103,10 +118,10 @@ void main() {
       expect(tester.widget<Text>(totalFeeFinder).data, 'CAD \$50');
 
       // Verify Sticky Bottom Action Bar displays authoritative price directly on CTA
-      expect(find.text('Complete Registration — CAD \$50'), findsOneWidget);
+      expect(find.text('Apply to Compete — CAD \$50'), findsOneWidget);
     });
 
-    testWidgets('2. Selecting Both Arms (Double Bracket) reflects second arm included in authoritative fee without invented surcharge', (tester) async {
+    testWidgets('2. Selecting Left Arm Bracket reflects selected bracket in summary without invented surcharge', (tester) async {
       final fakeTournament = _FakeTournamentNotifier();
 
       await tester.pumpWidget(
@@ -124,10 +139,10 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Initial state is single arm ($50)
-      expect(find.text('Complete Registration — CAD \$50'), findsOneWidget);
+      // Initial state is Right Arm ($50)
+      expect(find.text('Apply to Compete — CAD \$50'), findsOneWidget);
 
-      // Select 'BOTH' (Both Arms Double Bracket)
+      // Select 'LEFT' (Left Arm Bracket)
       final armDropdown = find.byWidgetPredicate(
         (w) => w is DropdownButtonFormField<String> && w.initialValue == 'RIGHT',
       );
@@ -138,17 +153,22 @@ void main() {
       await tester.tap(armDropdown);
       await tester.pumpAndSettle();
 
-      final bothArmsItem = find.text('Both Arms (Double Bracket)').last;
-      await tester.tap(bothArmsItem);
+      final leftArmItem = find.text('Left Arm Bracket').last;
+      await tester.tap(leftArmItem);
       await tester.pumpAndSettle();
 
-      // Verify summary card configuration pill updated
-      expect(find.textContaining('Both Arms (Double Bracket)'), findsWidgets);
+      // Verify summary card configuration updated
+      final summaryCardFinder = find.byKey(const ValueKey('registration_summary_card'));
+      expect(
+        find.descendant(
+          of: summaryCardFinder,
+          matching: find.textContaining('-85kg • Left Arm'),
+        ),
+        findsOneWidget,
+      );
 
-      // Authoritative pricing breakdown: second arm is included, NOT an invented $50 surcharge
-      expect(find.text('Division Entry Fee'), findsOneWidget);
-      expect(find.text('Second Arm Entry (Left Arm)'), findsOneWidget);
-      expect(find.text('Included'), findsOneWidget);
+      // Authoritative pricing breakdown remains CAD $50 without surcharge
+      expect(find.text('Accompanied Spectator Guests'), findsOneWidget);
       expect(find.text('+ CAD \$50'), findsNothing);
 
       // Total due remains authoritative event fee (CAD $50), NOT $100
@@ -156,8 +176,8 @@ void main() {
       expect(tester.widget<Text>(totalFeeFinder).data, 'CAD \$50');
 
       // Sticky CTA remains synchronized with authoritative total (CAD $50)
-      expect(find.text('Complete Registration — CAD \$50'), findsOneWidget);
-      expect(find.text('Complete Registration — CAD \$100'), findsNothing);
+      expect(find.text('Apply to Compete — CAD \$50'), findsOneWidget);
+      expect(find.text('Apply to Compete — CAD \$100'), findsNothing);
     });
 
     testWidgets('3. Different event fees dynamically populate summary card and CTA from model (e.g. CAD \$25)', (tester) async {
@@ -167,6 +187,15 @@ void main() {
         'location': 'Metro Convention Centre',
         'city': 'Calgary',
         'registrationFeeCents': 2500, // CAD $25.00
+        'weightCategories': [
+          {
+            'id': 'wc_85',
+            'label': '-85kg',
+            'division': 'SENIOR',
+            'arm': 'BOTH',
+            'enabled': true,
+          },
+        ],
       };
 
       await tester.pumpWidget(
@@ -189,7 +218,7 @@ void main() {
       expect(tester.widget<Text>(totalFeeFinder).data, 'CAD \$25');
 
       // Sticky CTA reflects CAD $25
-      expect(find.text('Complete Registration — CAD \$25'), findsOneWidget);
+      expect(find.text('Apply to Compete — CAD \$25'), findsOneWidget);
     });
 
     testWidgets('4. Free registration (0 cents) correctly renders Free Entry label in summary card and CTA', (tester) async {
@@ -199,6 +228,15 @@ void main() {
         'location': 'Local Community Gym',
         'city': 'Montreal',
         'registrationFeeCents': 0, // Free entry
+        'weightCategories': [
+          {
+            'id': 'wc_85',
+            'label': '-85kg',
+            'division': 'SENIOR',
+            'arm': 'BOTH',
+            'enabled': true,
+          },
+        ],
       };
 
       await tester.pumpWidget(
@@ -216,21 +254,30 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Summary card shows 'Free entry'
+      // Summary card shows 'Free Entry'
       final totalFeeFinder = find.byKey(const ValueKey('registration_total_fee_text'));
-      expect(tester.widget<Text>(totalFeeFinder).data, 'Free entry');
+      expect(tester.widget<Text>(totalFeeFinder).data, 'Free Entry');
 
-      // Sticky CTA displays 'Complete Registration — Free Entry'
-      expect(find.text('Complete Registration — Free Entry'), findsOneWidget);
+      // Sticky CTA displays 'Apply to Compete — Free Entry'
+      expect(find.text('Apply to Compete — Free Entry'), findsOneWidget);
     });
 
-    testWidgets('5. Missing or unconfigured fee data (null) safely defaults to Free entry without crash', (tester) async {
+    testWidgets('5. Missing or unconfigured fee data (null) safely defaults to Free Entry without crash', (tester) async {
       final unconfiguredFeeEvent = {
         'id': testTournamentId,
         'name': 'Informal Club Open',
         'location': 'ArmSphere HQ',
         'city': 'Vancouver',
         'registrationFeeCents': null, // Unconfigured / null
+        'weightCategories': [
+          {
+            'id': 'wc_85',
+            'label': '-85kg',
+            'division': 'SENIOR',
+            'arm': 'BOTH',
+            'enabled': true,
+          },
+        ],
       };
 
       await tester.pumpWidget(
@@ -248,12 +295,12 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Summary card shows 'Free entry'
+      // Summary card shows 'Free Entry'
       final totalFeeFinder = find.byKey(const ValueKey('registration_total_fee_text'));
-      expect(tester.widget<Text>(totalFeeFinder).data, 'Free entry');
+      expect(tester.widget<Text>(totalFeeFinder).data, 'Free Entry');
 
-      // Sticky CTA displays 'Complete Registration — Free Entry'
-      expect(find.text('Complete Registration — Free Entry'), findsOneWidget);
+      // Sticky CTA displays 'Apply to Compete — Free Entry'
+      expect(find.text('Apply to Compete — Free Entry'), findsOneWidget);
     });
 
     testWidgets('6. Loading state disables submit CTA and prevents premature free entry assumption', (tester) async {
@@ -284,7 +331,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // CTA is now active with authoritative fee
-      expect(find.text('Complete Registration — CAD \$50'), findsOneWidget);
+      expect(find.text('Apply to Compete — CAD \$50'), findsOneWidget);
     });
 
     testWidgets('7. Submitting registration dispatches selected parameters with arm choice and communicates success', (tester) async {
@@ -317,7 +364,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Select 'BOTH'
+      // Select 'LEFT' (Left Arm Bracket)
       final armDropdown = find.byWidgetPredicate(
         (w) => w is DropdownButtonFormField<String> && w.initialValue == 'RIGHT',
       );
@@ -325,26 +372,27 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(armDropdown);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Both Arms (Double Bracket)').last);
+      await tester.tap(find.text('Left Arm Bracket').last);
       await tester.pumpAndSettle();
 
       // Tap submit CTA
-      final submitButton = find.text('Complete Registration — CAD \$50');
+      final submitButton = find.text('Apply to Compete — CAD \$50');
       expect(submitButton, findsOneWidget);
 
       await tester.tap(submitButton);
       await tester.pumpAndSettle();
 
-      // Verify registerAthlete was called with arm: BOTH
+      // Verify registerAthlete was called with arm: LEFT
       expect(fakeTournament.lastRegistrationPayload, isNotNull);
       expect(fakeTournament.lastRegistrationPayload!['eventId'], testTournamentId);
       expect(fakeTournament.lastRegistrationPayload!['athleteId'], 'athlete_444');
       expect(fakeTournament.lastRegistrationPayload!['division'], 'SENIOR');
       expect(fakeTournament.lastRegistrationPayload!['weightClass'], '-85kg');
-      expect(fakeTournament.lastRegistrationPayload!['arm'], 'BOTH');
+      expect(fakeTournament.lastRegistrationPayload!['arm'], 'LEFT');
 
-      // Verify SnackBar communicates success
-      expect(find.textContaining('Registration Recorded!'), findsOneWidget);
+      // Verify confirmation dialog communicates success
+      expect(find.text('REGISTRATION CONFIRMED'), findsOneWidget);
+      expect(find.textContaining('Confirmed • -85kg • Left Arm'), findsOneWidget);
     });
   });
 }

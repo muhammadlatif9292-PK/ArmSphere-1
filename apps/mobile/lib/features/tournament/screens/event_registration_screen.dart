@@ -486,7 +486,7 @@ class _EventRegistrationScreenState
           hive: hive,
           tournamentId: widget.tournamentId,
           serverEvents: [
-            ...tournamentState.events,
+            ...(tournamentState.valueOrNull ?? const <Map<String, dynamic>>[]),
             if (eventAsync.valueOrNull != null) eventAsync.valueOrNull!,
           ],
           fallbackEvent: eventAsync.valueOrNull ?? widget.initialEvent,

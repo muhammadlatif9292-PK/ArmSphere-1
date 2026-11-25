@@ -672,7 +672,7 @@ void main() {
 
   group('Right-column badge and full-width ribbon alignment', () {
     testWidgets(
-        'VERIFIED and PAFF COMPETITOR badges sit inside the right 55% dossier zone leaving left 45% subject stage unobstructed',
+        'VERIFIED and ARMSPHERE ATHLETE badges sit inside the right 55% dossier zone leaving left 45% subject stage unobstructed',
         (tester) async {
       await _pumpDashboard(tester, width: 412);
 
@@ -680,7 +680,7 @@ void main() {
         find.byKey(const ValueKey('profile.athlete.dashboard_hero')),
       );
       final verifiedFinder = find.text('VERIFIED');
-      final paffFinder = find.text('PAFF COMPETITOR');
+      final paffFinder = find.text('ARMSPHERE ATHLETE');
 
       final wrapFinder =
           find.ancestor(of: paffFinder, matching: find.byType(Wrap)).first;
@@ -1101,7 +1101,7 @@ void main() {
       await _pumpDashboard(tester, width: 412);
 
       final verifiedFinder = find.text('VERIFIED');
-      final paffFinder = find.text('PAFF COMPETITOR');
+      final paffFinder = find.text('ARMSPHERE ATHLETE');
 
       final verifiedContainer = tester.widget<Container>(
         find

@@ -44191,6 +44191,7 @@ var users, userSessions, auditLogs, athleteProfiles, athleteClubs, athleteVerifi
 var init_dist2 = __esm({
   "packages/db-schema/dist/index.js"() {
     "use strict";
+    init_drizzle_orm();
     init_pg_core();
     users = pgTable("users", {
       id: uuid("id").primaryKey().defaultRandom(),
@@ -44199,6 +44200,7 @@ var init_dist2 = __esm({
       passwordHash: text("password_hash").notNull(),
       role: varchar("role", { length: 50 }).notNull().default("ATHLETE"),
       fullName: varchar("full_name", { length: 255 }).notNull(),
+      profileQrCode: varchar("profile_qr_code", { length: 255 }).notNull().unique().default(sql`'ARMSPHERE-ATHLETE-QR:' || gen_random_uuid()::text`),
       isActive: boolean("is_active").notNull().default(true),
       mfaSecret: text("mfa_secret"),
       mfaEnabled: boolean("mfa_enabled").notNull().default(false),
@@ -44211,7 +44213,8 @@ var init_dist2 = __esm({
       updatedAt: timestamp("updated_at").notNull().defaultNow()
     }, (table) => {
       return {
-        provinceIdx: index("idx_users_province").on(table.province)
+        provinceIdx: index("idx_users_province").on(table.province),
+        profileQrCodeIdx: uniqueIndex("idx_users_profile_qr_code").on(table.profileQrCode)
       };
     });
     userSessions = pgTable("user_sessions", {
@@ -44224,7 +44227,11 @@ var init_dist2 = __esm({
       ipAddress: varchar("ip_address", { length: 45 }),
       userAgent: text("user_agent"),
       createdAt: timestamp("created_at").notNull().defaultNow()
-    });
+    }, (table) => ({
+      userIdIdx: index("idx_user_sessions_user_id").on(table.userId),
+      userRevokedIdx: index("idx_user_sessions_user_revoked").on(table.userId, table.isRevoked),
+      createdAtIdx: index("idx_user_sessions_created_at").on(table.createdAt)
+    }));
     auditLogs = pgTable("audit_logs", {
       id: uuid("id").primaryKey().defaultRandom(),
       userId: uuid("user_id").references(() => users.id),
@@ -44233,7 +44240,11 @@ var init_dist2 = __esm({
       ipAddress: varchar("ip_address", { length: 45 }),
       userAgent: text("user_agent"),
       createdAt: timestamp("created_at").notNull().defaultNow()
-    });
+    }, (table) => ({
+      userIdIdx: index("idx_audit_logs_user_id").on(table.userId),
+      actionIdx: index("idx_audit_logs_action").on(table.action),
+      createdAtIdx: index("idx_audit_logs_created_at").on(table.createdAt)
+    }));
     athleteProfiles = pgTable("athlete_profiles", {
       id: uuid("id").primaryKey().defaultRandom(),
       userId: uuid("user_id").references(() => users.id).notNull().unique(),
@@ -44265,8 +44276,16 @@ var init_dist2 = __esm({
       latitude: real("latitude"),
       longitude: real("longitude"),
       locationVisibility: varchar("location_visibility", { length: 20 }).notNull().default("AREA"),
-      locationFuzzSeed: varchar("location_fuzz_seed", { length: 64 })
-    });
+      locationFuzzSeed: varchar("location_fuzz_seed", { length: 64 }),
+      profileQrCode: varchar("profile_qr_code", { length: 255 })
+    }, (table) => ({
+      provinceIdx: index("idx_athlete_profiles_province").on(table.province),
+      weightClassIdx: index("idx_athlete_profiles_weight_class").on(table.weightClass),
+      rightEloIdx: index("idx_athlete_profiles_right_elo").on(table.rightArmElo),
+      leftEloIdx: index("idx_athlete_profiles_left_elo").on(table.leftArmElo),
+      searchableDeletedIdx: index("idx_athlete_profiles_searchable_deleted").on(table.isSearchable, table.isDeleted),
+      profileQrCodeIdx: index("idx_athlete_profiles_profile_qr_code").on(table.profileQrCode)
+    }));
     athleteClubs = pgTable("athlete_clubs", {
       id: uuid("id").primaryKey().defaultRandom(),
       name: varchar("name", { length: 255 }).notNull(),
@@ -44286,7 +44305,10 @@ var init_dist2 = __esm({
       rejectionReason: text("rejection_reason"),
       createdAt: timestamp("created_at").notNull().defaultNow(),
       updatedAt: timestamp("updated_at").notNull().defaultNow()
-    });
+    }, (table) => ({
+      athleteIdIdx: index("idx_athlete_verifications_athlete_id").on(table.athleteId),
+      statusIdx: index("idx_athlete_verifications_status").on(table.status)
+    }));
     athleteDocuments = pgTable("athlete_documents", {
       id: uuid("id").primaryKey().defaultRandom(),
       athleteId: uuid("athlete_id").references(() => users.id).notNull(),
@@ -44356,7 +44378,11 @@ var init_dist2 = __esm({
       action: varchar("action", { length: 255 }).notNull(),
       payload: jsonb("payload"),
       createdAt: timestamp("created_at").notNull().defaultNow()
-    });
+    }, (table) => ({
+      actionIdx: index("idx_audit_events_action").on(table.action),
+      actorIdIdx: index("idx_audit_events_actor_id").on(table.actorId),
+      createdAtIdx: index("idx_audit_events_created_at").on(table.createdAt)
+    }));
     venuePartners = pgTable("venue_partners", {
       id: uuid("id").primaryKey().defaultRandom(),
       name: varchar("name", { length: 255 }).notNull(),
@@ -44409,9 +44435,19 @@ var init_dist2 = __esm({
       approvedBy: uuid("approved_by").references(() => users.id),
       paymentConfirmedByOrganizer: boolean("payment_confirmed_by_organizer").notNull().default(false),
       paymentConfirmedAt: timestamp("payment_confirmed_at"),
+      profileQrCode: varchar("profile_qr_code", { length: 255 }),
+      athleteFullName: varchar("athlete_full_name", { length: 255 }),
+      checkedInAt: timestamp("checked_in_at"),
+      checkedInBy: uuid("checked_in_by").references(() => users.id),
       createdAt: timestamp("created_at").notNull().defaultNow(),
       updatedAt: timestamp("updated_at").notNull().defaultNow()
-    });
+    }, (table) => ({
+      eventIdIdx: index("idx_event_registrations_event_id").on(table.eventId),
+      athleteIdIdx: index("idx_event_registrations_athlete_id").on(table.athleteId),
+      eventAthleteIdx: index("idx_event_registrations_event_athlete").on(table.eventId, table.athleteId),
+      statusIdx: index("idx_event_registrations_status").on(table.status),
+      profileQrCodeIdx: index("idx_event_registrations_profile_qr_code").on(table.profileQrCode)
+    }));
     processedStripeEvents = pgTable("processed_stripe_events", {
       id: varchar("id", { length: 255 }).primaryKey(),
       createdAt: timestamp("created_at").notNull().defaultNow()
@@ -44478,7 +44514,12 @@ var init_dist2 = __esm({
       longitude: real("longitude"),
       createdAt: timestamp("created_at").notNull().defaultNow(),
       updatedAt: timestamp("updated_at").notNull().defaultNow()
-    });
+    }, (table) => ({
+      organizationIdIdx: index("idx_events_organization_id").on(table.organizationId),
+      organizerIdIdx: index("idx_events_organizer_id").on(table.organizerId),
+      statusIdx: index("idx_events_status").on(table.status),
+      startDateIdx: index("idx_events_start_date").on(table.startDate)
+    }));
     announcements = pgTable("announcements", {
       id: uuid("id").primaryKey().defaultRandom(),
       title: varchar("title", { length: 255 }).notNull(),
@@ -44510,7 +44551,12 @@ var init_dist2 = __esm({
       verifiedAt: timestamp("verified_at")
     }, (table) => {
       return {
-        provinceIdx: index("idx_matches_province").on(table.province)
+        provinceIdx: index("idx_matches_province").on(table.province),
+        challengerIdIdx: index("idx_matches_challenger_id").on(table.challengerId),
+        opponentIdIdx: index("idx_matches_opponent_id").on(table.opponentId),
+        refereeIdIdx: index("idx_matches_referee_id").on(table.refereeId),
+        statusIdx: index("idx_matches_status").on(table.status),
+        createdAtIdx: index("idx_matches_created_at").on(table.createdAt)
       };
     });
     disputes = pgTable("disputes", {
@@ -44556,7 +44602,9 @@ var init_dist2 = __esm({
       province: varchar("province", { length: 100 }),
       createdAt: timestamp("created_at").notNull().defaultNow(),
       updatedAt: timestamp("updated_at").notNull().defaultNow()
-    });
+    }, (table) => ({
+      userStatusIdx: index("idx_sanctions_user_status").on(table.userId, table.status)
+    }));
     blockedUsers = pgTable("blocked_users", {
       id: uuid("id").primaryKey().defaultRandom(),
       blockerId: uuid("blocker_id").references(() => athleteProfiles.id).notNull(),
@@ -44598,7 +44646,9 @@ var init_dist2 = __esm({
       seedingLocked: boolean("seeding_locked").notNull().default(false),
       createdAt: timestamp("created_at").notNull().defaultNow(),
       updatedAt: timestamp("updated_at").notNull().defaultNow()
-    });
+    }, (table) => ({
+      eventIdIdx: index("idx_brackets_event_id").on(table.eventId)
+    }));
     bracketSeeds = pgTable("bracket_seeds", {
       id: uuid("id").primaryKey().defaultRandom(),
       bracketId: uuid("bracket_id").references(() => brackets.id).notNull(),
@@ -44642,7 +44692,12 @@ var init_dist2 = __esm({
       updatedAt: timestamp("updated_at").notNull().defaultNow()
     }, (table) => {
       return {
-        provinceIdx: index("idx_tournament_matches_province").on(table.province)
+        provinceIdx: index("idx_tournament_matches_province").on(table.province),
+        bracketIdIdx: index("idx_tournament_matches_bracket_id").on(table.bracketId),
+        athleteAIdIdx: index("idx_tournament_matches_athlete_a_id").on(table.athleteAId),
+        athleteBIdIdx: index("idx_tournament_matches_athlete_b_id").on(table.athleteBId),
+        refereeIdIdx: index("idx_tournament_matches_referee_id").on(table.refereeId),
+        statusIdx: index("idx_tournament_matches_status").on(table.status)
       };
     });
     tournamentTableQueue = pgTable("tournament_table_queue", {
@@ -44762,18 +44817,31 @@ var init_dist2 = __esm({
       lastAttemptAt: timestamp("last_attempt_at"),
       createdAt: timestamp("created_at").notNull().defaultNow(),
       updatedAt: timestamp("updated_at").notNull().defaultNow()
-    });
+    }, (table) => ({
+      userIdIdx: index("idx_notifications_user_id").on(table.userId),
+      userStatusIdx: index("idx_notifications_user_status").on(table.userId, table.status),
+      createdAtIdx: index("idx_notifications_created_at").on(table.createdAt)
+    }));
     refereeCertifications = pgTable("referee_certifications", {
       id: uuid("id").primaryKey().defaultRandom(),
       userId: uuid("user_id").references(() => users.id).notNull(),
+      athleteId: uuid("athlete_id"),
+      issuingOrganizationId: uuid("issuing_organization_id").references(() => organizations.id, { onDelete: "set null" }),
+      issuedByUserId: uuid("issued_by_user_id").references(() => users.id, { onDelete: "set null" }),
       certificationLevel: varchar("certification_level", { length: 100 }).notNull(),
       issuedAt: timestamp("issued_at").notNull(),
       expiresAt: timestamp("expires_at"),
       issuingBody: varchar("issuing_body", { length: 255 }).notNull(),
       status: varchar("status", { length: 50 }).notNull().default("ACTIVE"),
+      notes: text("notes"),
       createdAt: timestamp("created_at").notNull().defaultNow(),
       updatedAt: timestamp("updated_at").notNull().defaultNow()
-    });
+    }, (table) => ({
+      userIdIdx: index("idx_referee_certifications_user_id").on(table.userId),
+      statusIdx: index("idx_referee_certifications_status").on(table.status),
+      orgIdIdx: index("idx_referee_certifications_org_id").on(table.issuingOrganizationId),
+      athleteIdIdx: index("idx_referee_certifications_athlete_id").on(table.athleteId)
+    }));
     officialCertificates = pgTable("official_certificates", {
       id: uuid("id").primaryKey().defaultRandom(),
       certificateType: varchar("certificate_type", { length: 50 }).notNull(),
@@ -44911,7 +44979,11 @@ var init_dist2 = __esm({
       userId: uuid("user_id").references(() => users.id).notNull(),
       joinedAt: timestamp("joined_at").notNull().defaultNow(),
       lastReadAt: timestamp("last_read_at")
-    });
+    }, (table) => ({
+      userIdIdx: index("idx_conversation_participants_user_id").on(table.userId),
+      conversationIdIdx: index("idx_conversation_participants_conv_id").on(table.conversationId),
+      convUserUnique: uniqueIndex("idx_conversation_participants_conv_user").on(table.conversationId, table.userId)
+    }));
     messages = pgTable("messages", {
       id: uuid("id").primaryKey().defaultRandom(),
       conversationId: uuid("conversation_id").references(() => conversations.id).notNull(),
@@ -44923,7 +44995,10 @@ var init_dist2 = __esm({
       sequence: integer("sequence").notNull().default(1),
       createdAt: timestamp("created_at").notNull().defaultNow(),
       updatedAt: timestamp("updated_at").notNull().defaultNow()
-    });
+    }, (table) => ({
+      convCreatedIdx: index("idx_messages_conv_created_at").on(table.conversationId, table.createdAt),
+      senderIdIdx: index("idx_messages_sender_id").on(table.senderId)
+    }));
     userCommunicationPreferences = pgTable("user_communication_preferences", {
       id: uuid("id").primaryKey().defaultRandom(),
       userId: uuid("user_id").references(() => users.id).notNull().unique(),
@@ -44966,6 +45041,8 @@ var init_dist2 = __esm({
     roleApplications = pgTable("role_applications", {
       id: uuid("id").primaryKey().defaultRandom(),
       userId: uuid("user_id").references(() => users.id).notNull(),
+      athleteId: uuid("athlete_id"),
+      targetOrganizationId: uuid("target_organization_id").references(() => organizations.id, { onDelete: "set null" }),
       role: varchar("role", { length: 50 }).notNull(),
       status: varchar("status", { length: 50 }).notNull().default("PENDING"),
       experienceDetails: text("experience_details"),
@@ -44979,7 +45056,8 @@ var init_dist2 = __esm({
     }, (table) => {
       return {
         userRoleStatusIdx: index("idx_role_applications_user_role_status").on(table.userId, table.role, table.status),
-        statusIdx: index("idx_role_applications_status").on(table.status)
+        statusIdx: index("idx_role_applications_status").on(table.status),
+        targetOrgStatusIdx: index("idx_role_applications_target_org_status").on(table.targetOrganizationId, table.status)
       };
     });
     supportTickets = pgTable("support_tickets", {
@@ -50837,31 +50915,60 @@ var init_userRole = __esm({
             "Applications for governance and executive roles cannot be submitted via self-service."
           );
         }
-        const existingGrants = await db.select().from(userRoleGrants).where(
-          and(
-            eq(userRoleGrants.userId, userId),
-            eq(userRoleGrants.role, role),
-            eq(userRoleGrants.status, "ACTIVE")
-          )
-        ).limit(1);
-        if (existingGrants.length > 0) {
-          throw new BadRequestError(`You already have an active verified grant for the role of ${role}.`);
+        let resolvedOrgId = null;
+        let resolvedOrgName = null;
+        if (role === UserRole.REFEREE) {
+          if (!details.targetOrganizationId) {
+            throw new BadRequestError(
+              "Please select a registered ArmSphere organization to apply for Referee certification."
+            );
+          }
+          const [org] = await db.select({ id: organizations.id, name: organizations.name }).from(organizations).where(eq(organizations.id, details.targetOrganizationId)).limit(1);
+          if (!org) {
+            throw new NotFoundError("Selected certifying organization was not found.");
+          }
+          resolvedOrgId = org.id;
+          resolvedOrgName = org.name;
+        } else if (details.targetOrganizationId) {
+          const [org] = await db.select({ id: organizations.id, name: organizations.name }).from(organizations).where(eq(organizations.id, details.targetOrganizationId)).limit(1);
+          if (!org) {
+            throw new NotFoundError("Selected organization was not found.");
+          }
+          resolvedOrgId = org.id;
+          resolvedOrgName = org.name;
         }
-        const existingApp = await db.select().from(roleApplications).where(
-          and(
-            eq(roleApplications.userId, userId),
-            eq(roleApplications.role, role),
-            eq(roleApplications.status, "PENDING")
-          )
-        ).limit(1);
+        if (role !== UserRole.REFEREE) {
+          const existingGrants = await db.select().from(userRoleGrants).where(
+            and(
+              eq(userRoleGrants.userId, userId),
+              eq(userRoleGrants.role, role),
+              eq(userRoleGrants.status, "ACTIVE")
+            )
+          ).limit(1);
+          if (existingGrants.length > 0) {
+            throw new BadRequestError(`You already have an active verified grant for the role of ${role}.`);
+          }
+        }
+        const pendingConditions = [
+          eq(roleApplications.userId, userId),
+          eq(roleApplications.role, role),
+          eq(roleApplications.status, "PENDING")
+        ];
+        if (resolvedOrgId) {
+          pendingConditions.push(eq(roleApplications.targetOrganizationId, resolvedOrgId));
+        }
+        const existingApp = await db.select().from(roleApplications).where(and(...pendingConditions)).limit(1);
         if (existingApp.length > 0) {
           throw new ConflictError(
-            `An application for the role of ${role} is already pending review.`
+            resolvedOrgName ? `A referee certification request to ${resolvedOrgName} is already pending review.` : `An application for the role of ${role} is already pending review.`
           );
         }
+        const [athleteProfile] = await db.select({ id: athleteProfiles.id }).from(athleteProfiles).where(eq(athleteProfiles.userId, userId)).limit(1);
         const applicationRecord = {
           id: v4_default(),
           userId,
+          athleteId: athleteProfile?.id || null,
+          targetOrganizationId: resolvedOrgId,
           role,
           status: "PENDING",
           experienceDetails: details.experienceDetails || null,
@@ -50871,7 +50978,10 @@ var init_userRole = __esm({
           updatedAt: /* @__PURE__ */ new Date()
         };
         const [inserted] = await db.insert(roleApplications).values(applicationRecord).returning();
-        return inserted || applicationRecord;
+        return {
+          ...inserted || applicationRecord,
+          targetOrganizationName: resolvedOrgName
+        };
       }
       /**
        * Reviews a role application.
@@ -50917,10 +51027,27 @@ var init_userRole = __esm({
         };
       }
       /**
-       * Retrieves applications for a specific user.
+       * Retrieves applications for a specific user with target organization names.
        */
       static async getUserApplications(userId) {
-        return await db.select().from(roleApplications).where(eq(roleApplications.userId, userId)).orderBy(desc(roleApplications.createdAt));
+        const rows = await db.select({
+          id: roleApplications.id,
+          userId: roleApplications.userId,
+          athleteId: roleApplications.athleteId,
+          targetOrganizationId: roleApplications.targetOrganizationId,
+          targetOrganizationName: organizations.name,
+          role: roleApplications.role,
+          status: roleApplications.status,
+          experienceDetails: roleApplications.experienceDetails,
+          certificationNumber: roleApplications.certificationNumber,
+          documents: roleApplications.documents,
+          reviewerId: roleApplications.reviewerId,
+          reviewedAt: roleApplications.reviewedAt,
+          reviewNotes: roleApplications.reviewNotes,
+          createdAt: roleApplications.createdAt,
+          updatedAt: roleApplications.updatedAt
+        }).from(roleApplications).leftJoin(organizations, eq(roleApplications.targetOrganizationId, organizations.id)).where(eq(roleApplications.userId, userId)).orderBy(desc(roleApplications.createdAt));
+        return rows;
       }
       /**
        * Retrieves pending applications for administrative review.
@@ -76192,18 +76319,34 @@ var init_refereeCertification = __esm({
             throw new BadRequestError("Invalid expiresAt date format");
           }
         }
+        let resolvedOrgName = input.issuingBody.trim();
+        let resolvedOrgId = input.issuingOrganizationId || null;
+        if (resolvedOrgId) {
+          const [org] = await db.select({ id: organizations.id, name: organizations.name }).from(organizations).where(eq(organizations.id, resolvedOrgId)).limit(1);
+          if (org) {
+            resolvedOrgId = org.id;
+            resolvedOrgName = org.name;
+          } else {
+            resolvedOrgId = null;
+          }
+        }
         const [certification] = await db.insert(refereeCertifications).values({
           userId: targetUserId,
+          issuingOrganizationId: resolvedOrgId,
           certificationLevel: input.certificationLevel.trim(),
           issuedAt: issuedDate,
           expiresAt: expiresDate,
-          issuingBody: input.issuingBody.trim(),
+          issuingBody: resolvedOrgName,
+          notes: input.notes?.trim() || null,
           status: "ACTIVE"
         }).returning();
-        return certification;
+        return {
+          ...certification,
+          issuingOrganizationName: resolvedOrgName
+        };
       }
       /**
-       * List certifications of a specific referee (own user or admin view)
+       * List certifications of a specific referee (own user or admin view) joined with organizations.
        */
       static async listCertifications(actorUserId, actorRole, targetUserId) {
         const isAdmin = ["system_admin", "national_director", "provincial_director"].includes(
@@ -76213,7 +76356,38 @@ var init_refereeCertification = __esm({
         if (!isAdmin && !isOwnUser) {
           throw new ForbiddenError("You are not authorized to view these certifications");
         }
-        return await db.select().from(refereeCertifications).where(eq(refereeCertifications.userId, targetUserId)).orderBy(desc(refereeCertifications.issuedAt));
+        const rows = await db.select({
+          id: refereeCertifications.id,
+          userId: refereeCertifications.userId,
+          athleteId: refereeCertifications.athleteId,
+          issuingOrganizationId: refereeCertifications.issuingOrganizationId,
+          issuedByUserId: refereeCertifications.issuedByUserId,
+          certificationLevel: refereeCertifications.certificationLevel,
+          issuedAt: refereeCertifications.issuedAt,
+          expiresAt: refereeCertifications.expiresAt,
+          issuingBody: refereeCertifications.issuingBody,
+          status: refereeCertifications.status,
+          notes: refereeCertifications.notes,
+          createdAt: refereeCertifications.createdAt,
+          updatedAt: refereeCertifications.updatedAt,
+          organizationName: organizations.name
+        }).from(refereeCertifications).leftJoin(organizations, eq(refereeCertifications.issuingOrganizationId, organizations.id)).where(eq(refereeCertifications.userId, targetUserId)).orderBy(desc(refereeCertifications.issuedAt));
+        return rows.map((r5) => ({
+          id: r5.id,
+          userId: r5.userId,
+          athleteId: r5.athleteId,
+          issuingOrganizationId: r5.issuingOrganizationId,
+          issuingOrganizationName: r5.organizationName || r5.issuingBody,
+          issuedByUserId: r5.issuedByUserId,
+          certificationLevel: r5.certificationLevel,
+          issuedAt: r5.issuedAt,
+          expiresAt: r5.expiresAt,
+          issuingBody: r5.organizationName || r5.issuingBody,
+          status: r5.status,
+          notes: r5.notes,
+          createdAt: r5.createdAt,
+          updatedAt: r5.updatedAt
+        }));
       }
       /**
        * Revoke a certification (admin only)
@@ -76338,9 +76512,25 @@ var init_refereeCertification = __esm({
         }
         const userMap = new Map(provinceUsers.map((u) => [u.id, u]));
         const userIds = provinceUsers.map((u) => u.id);
-        const certs = await db.select().from(refereeCertifications).where(inArray(refereeCertifications.userId, userIds)).orderBy(desc(refereeCertifications.issuedAt));
+        const certs = await db.select({
+          id: refereeCertifications.id,
+          userId: refereeCertifications.userId,
+          athleteId: refereeCertifications.athleteId,
+          issuingOrganizationId: refereeCertifications.issuingOrganizationId,
+          certificationLevel: refereeCertifications.certificationLevel,
+          issuedAt: refereeCertifications.issuedAt,
+          expiresAt: refereeCertifications.expiresAt,
+          issuingBody: refereeCertifications.issuingBody,
+          status: refereeCertifications.status,
+          notes: refereeCertifications.notes,
+          createdAt: refereeCertifications.createdAt,
+          updatedAt: refereeCertifications.updatedAt,
+          organizationName: organizations.name
+        }).from(refereeCertifications).leftJoin(organizations, eq(refereeCertifications.issuingOrganizationId, organizations.id)).where(inArray(refereeCertifications.userId, userIds)).orderBy(desc(refereeCertifications.issuedAt));
         return certs.filter((c5) => userMap.has(c5.userId)).map((c5) => ({
           ...c5,
+          issuingOrganizationName: c5.organizationName || c5.issuingBody,
+          issuingBody: c5.organizationName || c5.issuingBody,
           userFullName: userMap.get(c5.userId)?.fullName,
           userEmail: userMap.get(c5.userId)?.email,
           userProvince: userMap.get(c5.userId)?.province
@@ -76842,38 +77032,38 @@ var init_rankings = __esm({
           weight: athleteProfiles.weight,
           profilePhoto: athleteProfiles.profilePhoto
         }).from(athleteProfiles).where(and(...conditions)).orderBy(desc(eloField), asc(athleteProfiles.id)).limit(limit + 1);
+        const bucketFromKg = (kg) => {
+          if (kg <= 65) return "65kg";
+          if (kg <= 75) return "75kg";
+          if (kg <= 85) return "85kg";
+          if (kg <= 95) return "95kg";
+          if (kg <= 105) return "105kg";
+          return "105kg+";
+        };
+        const normalizeWeightToken = (wc) => wc.trim().toLowerCase().replace(/\s+/g, "").replace(/^-/, "");
         const resolveWeightClass = (rec, filterWeightClass) => {
           const rawWc = typeof rec.weightClass === "string" ? rec.weightClass.trim() : "";
           if (rawWc && rawWc.toUpperCase() !== "OPEN") {
-            const lower = rawWc.toLowerCase().replace(/\s+/g, "");
-            if (lower.includes("105+") || lower.includes("+105") || lower.includes(">105")) {
-              return "105kg+";
-            }
-            const numMatch = lower.match(/(\d+(\.\d+)?)/);
-            if (numMatch) {
-              const val = parseFloat(numMatch[1]);
-              if (val <= 65) return "65kg";
-              if (val <= 75) return "75kg";
-              if (val <= 85) return "85kg";
-              if (val <= 95) return "95kg";
-              if (val <= 105) return "105kg";
-              return "105kg+";
-            }
             return rawWc;
           }
           if (typeof rec.weight === "number" && rec.weight > 0) {
-            if (rec.weight <= 65) return "65kg";
-            if (rec.weight <= 75) return "75kg";
-            if (rec.weight <= 85) return "85kg";
-            if (rec.weight <= 95) return "95kg";
-            if (rec.weight <= 105) return "105kg";
-            return "105kg+";
+            return bucketFromKg(rec.weight);
           }
           return filterWeightClass || rawWc || "OPEN";
         };
-        const filteredRecords = weightClass && weightClass.toUpperCase() !== "ALL" && weightClass.toUpperCase() !== "OPEN" ? records.filter(
-          (rec) => resolveWeightClass(rec).toLowerCase() === weightClass.trim().toLowerCase()
-        ) : records;
+        const matchesWeightClassFilter = (rec, targetFilter) => {
+          const resolved = resolveWeightClass(rec);
+          const normResolved = normalizeWeightToken(resolved);
+          const normTarget = normalizeWeightToken(targetFilter);
+          if (normResolved === normTarget) return true;
+          const numMatch = normResolved.match(/(\d+(\.\d+)?)/);
+          if (numMatch) {
+            const bucket = normalizeWeightToken(bucketFromKg(parseFloat(numMatch[1])));
+            if (bucket === normTarget) return true;
+          }
+          return false;
+        };
+        const filteredRecords = weightClass && weightClass.toUpperCase() !== "ALL" && weightClass.toUpperCase() !== "OPEN" ? records.filter((rec) => matchesWeightClassFilter(rec, weightClass)) : records;
         const hasNext = filteredRecords.length > limit;
         const itemsToReturn = filteredRecords.slice(0, limit);
         const items = itemsToReturn.map((rec, index2) => {
@@ -77010,6 +77200,10 @@ var init_match = __esm({
         if (!scoreRegex.test(input.scoreLine)) {
           throw new BadRequestError("Score line must be formatted as 'X-Y' (e.g. '3-1').");
         }
+        const [scoreA, scoreB] = input.scoreLine.split("-").map((n3) => Number.parseInt(n3, 10));
+        if (scoreA === scoreB) {
+          throw new BadRequestError("Official match scoreline cannot be a tie (e.g. '3-3').");
+        }
         if (idempotencyKey) {
           const [existingMatch] = await db.select().from(matches).where(eq(matches.idempotencyKey, idempotencyKey)).limit(1);
           if (existingMatch) {
@@ -77023,6 +77217,9 @@ var init_match = __esm({
         const [opponentProfile] = await db.select().from(athleteProfiles).where(eq(athleteProfiles.id, input.opponentId)).limit(1);
         if (!opponentProfile) {
           throw new NotFoundError("Opponent athlete profile not found");
+        }
+        if (challengerProfile.userId === refereeId || opponentProfile.userId === refereeId) {
+          throw new ForbiddenError("Referees cannot officiate their own rated match.");
         }
         const [refereeUser] = await db.select().from(users).where(eq(users.id, refereeId)).limit(1);
         if (!refereeUser) {
@@ -77157,7 +77354,7 @@ var init_match = __esm({
           const challengerTeamName = resolveAffiliation(challenger, r5.challengerId);
           const opponentTeamName = resolveAffiliation(opponent, r5.opponentId);
           const refereeUser = r5.refereeId ? allUsers.find((u) => u.id === r5.refereeId) : null;
-          const refereeName = refereeUser?.fullName || refereeUser?.username || "PAFF Certified Referee";
+          const refereeName = refereeUser?.fullName || refereeUser?.username || "Certified Official";
           const refereeRole = refereeUser?.role || "REFEREE";
           const rawScore = String(r5.scoreLine ?? "0-0");
           const parts = rawScore.split(/[\s\-:]+/);
@@ -77183,7 +77380,7 @@ var init_match = __esm({
           const table = matchedTournamentBout?.tableId ? allTables.find((t) => t.id === matchedTournamentBout.tableId) : null;
           const effectiveProvince = r5.province ?? event?.province ?? challenger?.province ?? opponent?.province ?? null;
           const effectiveCity = event?.city ?? challenger?.city ?? opponent?.city ?? effectiveProvince ?? "Pakistan";
-          const effectiveVenue = event?.venueName ?? (effectiveProvince ? `${effectiveProvince} Federation Arena` : "PAFF Sanctioned Championship Arena");
+          const effectiveVenue = event?.venueName ?? (effectiveProvince ? `${effectiveProvince} Arena` : "Sanctioned Championship Arena");
           const weightClass = bracket?.division ?? challenger?.weightClass ?? opponent?.weightClass ?? "Open";
           const armUpper = String(r5.arm ?? "RIGHT").toUpperCase();
           const challengerCurrentElo = armUpper === "LEFT" ? challenger?.leftArmElo ?? 1e3 : challenger?.rightArmElo ?? 1e3;
@@ -78148,7 +78345,17 @@ var init_administration = __esm({
         const refereeUsers = [...primaryReferees, ...additionalReferees];
         const allMatches = await db.select().from(matches);
         const allTMatches = await db.select().from(tournamentMatches);
-        const allCertifications = await db.select().from(refereeCertifications);
+        const allCertifications = await db.select({
+          id: refereeCertifications.id,
+          userId: refereeCertifications.userId,
+          issuingOrganizationId: refereeCertifications.issuingOrganizationId,
+          certificationLevel: refereeCertifications.certificationLevel,
+          issuedAt: refereeCertifications.issuedAt,
+          expiresAt: refereeCertifications.expiresAt,
+          issuingBody: refereeCertifications.issuingBody,
+          status: refereeCertifications.status,
+          organizationName: organizations.name
+        }).from(refereeCertifications).leftJoin(organizations, eq(refereeCertifications.issuingOrganizationId, organizations.id));
         const allDisputes = await db.select().from(disputes);
         return refereeUsers.map((user) => {
           const standardCount = allMatches.filter((m3) => m3.refereeId === user.id).length;
@@ -78163,7 +78370,16 @@ var init_administration = __esm({
           const overturnedDisputes = refereeDisputes.filter((d5) => d5.status === "RESOLVED").length;
           const disputeRate = totalMatchesRefereed > 0 ? Number((disputeCount / totalMatchesRefereed * 100).toFixed(1)) : null;
           const accuracyRate = totalMatchesRefereed > 0 ? Number((Math.max(0, (totalMatchesRefereed - overturnedDisputes) / totalMatchesRefereed) * 100).toFixed(1)) : null;
-          const ownCertifications = allCertifications.filter((c5) => c5.userId === user.id).sort((a5, b5) => new Date(b5.issuedAt).getTime() - new Date(a5.issuedAt).getTime());
+          const ownCertifications = allCertifications.filter((c5) => c5.userId === user.id).sort((a5, b5) => new Date(b5.issuedAt).getTime() - new Date(a5.issuedAt).getTime()).map((c5) => ({
+            id: c5.id,
+            certificationLevel: c5.certificationLevel,
+            issuingOrganizationId: c5.issuingOrganizationId,
+            issuingOrganizationName: c5.organizationName || c5.issuingBody,
+            issuingBody: c5.organizationName || c5.issuingBody,
+            issuedAt: c5.issuedAt,
+            expiresAt: c5.expiresAt,
+            status: c5.status
+          }));
           const bestCertification = ownCertifications.find((c5) => c5.status === "ACTIVE") || ownCertifications[0] || null;
           return {
             id: user.id,
@@ -78173,6 +78389,9 @@ var init_administration = __esm({
             createdAt: user.createdAt,
             licenseClass: bestCertification?.certificationLevel ?? null,
             certificationStatus: bestCertification?.status ?? null,
+            issuingOrganizationId: bestCertification?.issuingOrganizationId ?? null,
+            issuingOrganizationName: bestCertification?.issuingOrganizationName ?? null,
+            certifications: ownCertifications,
             region: user.regionalCoverage ?? null,
             performance: {
               totalMatches: totalMatchesRefereed,
@@ -78470,8 +78689,46 @@ var init_administration = __esm({
       /**
        * 8. Immutable Audit Explorer
        */
-      static async getAuditEvents() {
-        return db.select().from(auditEvents).orderBy(desc(auditEvents.createdAt));
+      static async getAuditEvents(filters) {
+        const conditions = [];
+        const rawAction = filters?.actionType?.trim().toUpperCase();
+        if (rawAction && rawAction !== "ALL") {
+          if (rawAction === "DISPUTE" || rawAction === "DISPUTE_RESOLVED") {
+            conditions.push(ilike(auditEvents.action, "%DISPUTE%"));
+          } else if (rawAction === "ATHLETE_REVIEW") {
+            conditions.push(
+              or(
+                eq(auditEvents.action, "ATHLETE_REVIEW"),
+                ilike(auditEvents.action, "ATHLETE_VERIF%"),
+                ilike(auditEvents.action, "ATHLETE_REVIEW%"),
+                ilike(auditEvents.action, "ATHLETE_REJECT%"),
+                ilike(auditEvents.action, "ATHLETE_APPROV%")
+              )
+            );
+          } else if (rawAction === "MATCH_OVERRIDE") {
+            conditions.push(
+              or(
+                eq(auditEvents.action, "MATCH_OVERRIDE"),
+                ilike(auditEvents.action, "MATCH_%OVERRIDE%"),
+                ilike(auditEvents.action, "MATCH_VOID%"),
+                ilike(auditEvents.action, "MATCH_CORRECT%")
+              )
+            );
+          } else {
+            conditions.push(eq(auditEvents.action, rawAction));
+          }
+        }
+        const rawActorId = filters?.actorId?.trim();
+        if (rawActorId) {
+          conditions.push(ilike(auditEvents.actorId, `%${rawActorId}%`));
+        }
+        const baseQuery = db.select().from(auditEvents);
+        const filteredQuery = conditions.length > 0 ? baseQuery.where(and(...conditions)) : baseQuery;
+        const orderedQuery = filteredQuery.orderBy(desc(auditEvents.createdAt));
+        if (filters?.limit && filters.limit > 0) {
+          return orderedQuery.limit(filters.limit);
+        }
+        return orderedQuery;
       }
       static async verifyImmutableAuditLedger() {
         logger.info("Verifying entire audit trail chain dynamically");
@@ -79434,29 +79691,45 @@ var init_messaging2 = __esm({
             throw new ForbiddenError("Cannot start conversation: This user is blocked or has blocked you.");
           }
         }
+        const directPairKey = type === "DIRECT" ? [creatorId, participantId].sort().join(":") : null;
         if (type === "DIRECT") {
           const existingCPs = await db.select().from(conversationParticipants).where(eq(conversationParticipants.userId, creatorId));
-          for (const cp of existingCPs) {
-            const [otherPart] = await db.select().from(conversationParticipants).where(and(
-              eq(conversationParticipants.conversationId, cp.conversationId),
-              eq(conversationParticipants.userId, participantId)
-            ));
-            if (otherPart) {
-              const [conv] = await db.select().from(conversations).where(and(eq(conversations.id, cp.conversationId), eq(conversations.type, "DIRECT")));
-              if (conv) {
-                return { conversation: conv, isNew: false };
-              }
+          const candidateConvIds = existingCPs.map((cp) => cp.conversationId);
+          if (candidateConvIds.length > 0) {
+            const [matchingOtherParts, candidateConvs] = await Promise.all([
+              db.select().from(conversationParticipants).where(
+                and(
+                  inArray(conversationParticipants.conversationId, candidateConvIds),
+                  eq(conversationParticipants.userId, participantId)
+                )
+              ),
+              db.select().from(conversations).where(
+                and(
+                  inArray(conversations.id, candidateConvIds),
+                  eq(conversations.type, "DIRECT")
+                )
+              )
+            ]);
+            const matchingConvIdSet = new Set(
+              matchingOtherParts.map((p3) => p3.conversationId)
+            );
+            const matchedConvs = candidateConvs.filter((c5) => matchingConvIdSet.has(c5.id)).sort(
+              (a5, b5) => new Date(b5.updatedAt || b5.createdAt).getTime() - new Date(a5.updatedAt || a5.createdAt).getTime()
+            );
+            if (matchedConvs.length > 0) {
+              return { conversation: matchedConvs[0], isNew: false };
             }
           }
         }
         const [newConv] = await db.insert(conversations).values({
           type,
-          metadata: {}
+          metadata: directPairKey ? { directPairKey } : {}
         }).returning();
-        await db.insert(conversationParticipants).values([
+        const participantRows = creatorId === participantId ? [{ conversationId: newConv.id, userId: creatorId, lastReadAt: /* @__PURE__ */ new Date() }] : [
           { conversationId: newConv.id, userId: creatorId, lastReadAt: /* @__PURE__ */ new Date() },
           { conversationId: newConv.id, userId: participantId, lastReadAt: /* @__PURE__ */ new Date(0) }
-        ]);
+        ];
+        await db.insert(conversationParticipants).values(participantRows);
         return { conversation: newConv, isNew: true };
       }
       /**
@@ -79601,21 +79874,50 @@ var init_messaging2 = __esm({
        */
       static async getConversations(userId) {
         const userPartList = await db.select().from(conversationParticipants).where(eq(conversationParticipants.userId, userId));
-        const conversationList = [];
+        if (userPartList.length === 0) return [];
+        const convIds = Array.from(new Set(userPartList.map((p3) => p3.conversationId)));
+        const [convRows, allPartRows, allMsgRows] = await Promise.all([
+          db.select().from(conversations).where(inArray(conversations.id, convIds)),
+          db.select().from(conversationParticipants).where(inArray(conversationParticipants.conversationId, convIds)),
+          db.select().from(messages).where(inArray(messages.conversationId, convIds)).orderBy(desc(messages.createdAt))
+        ]);
+        const otherUserIds = Array.from(
+          new Set(
+            allPartRows.filter((p3) => p3.userId !== userId).map((p3) => p3.userId)
+          )
+        );
+        const [otherUsers, otherProfiles] = otherUserIds.length > 0 ? await Promise.all([
+          db.select().from(users).where(inArray(users.id, otherUserIds)),
+          db.select().from(athleteProfiles).where(inArray(athleteProfiles.userId, otherUserIds))
+        ]) : [[], []];
+        const convMap = new Map(convRows.map((c5) => [c5.id, c5]));
+        const userMap = new Map(otherUsers.map((u) => [u.id, u]));
+        const profileMap = new Map(otherProfiles.map((p3) => [p3.userId, p3]));
+        const otherPartsByConv = /* @__PURE__ */ new Map();
+        for (const p3 of allPartRows) {
+          if (p3.userId === userId) continue;
+          const arr = otherPartsByConv.get(p3.conversationId) || [];
+          arr.push(p3);
+          otherPartsByConv.set(p3.conversationId, arr);
+        }
+        const msgsByConv = /* @__PURE__ */ new Map();
+        for (const m3 of allMsgRows) {
+          const arr = msgsByConv.get(m3.conversationId) || [];
+          arr.push(m3);
+          msgsByConv.set(m3.conversationId, arr);
+        }
+        const rawList = [];
         for (const part of userPartList) {
-          const conversationId = part.conversationId;
-          const [conv] = await db.select().from(conversations).where(eq(conversations.id, conversationId));
+          const conv = convMap.get(part.conversationId);
           if (!conv) continue;
-          const otherParts = await db.select().from(conversationParticipants).where(and(
-            eq(conversationParticipants.conversationId, conversationId),
-            not(eq(conversationParticipants.userId, userId))
-          ));
+          const otherParts = otherPartsByConv.get(conv.id) || [];
           let otherParticipantProfile = null;
+          let otherUserId = null;
           if (otherParts.length > 0) {
-            const otherUserId = otherParts[0].userId;
-            const [otherUser] = await db.select().from(users).where(eq(users.id, otherUserId));
+            otherUserId = otherParts[0].userId;
+            const otherUser = userMap.get(otherUserId);
             if (otherUser) {
-              const [profile] = await db.select().from(athleteProfiles).where(eq(athleteProfiles.userId, otherUserId));
+              const profile = profileMap.get(otherUserId);
               otherParticipantProfile = {
                 id: otherUserId,
                 displayName: profile?.displayName || otherUser.fullName,
@@ -79623,13 +79925,14 @@ var init_messaging2 = __esm({
               };
             }
           }
-          const [lastMsg] = await db.select().from(messages).where(eq(messages.conversationId, conversationId)).orderBy(desc(messages.createdAt)).limit(1);
+          const convMsgs = msgsByConv.get(conv.id) || [];
+          const lastMsg = convMsgs.length > 0 ? convMsgs[0] : null;
           const lastRead = part.lastReadAt ? new Date(part.lastReadAt) : /* @__PURE__ */ new Date(0);
-          const allMsgs = await db.select().from(messages).where(eq(messages.conversationId, conversationId));
-          const unreadCount = allMsgs.filter((m3) => {
-            return new Date(m3.createdAt) > lastRead && m3.senderId !== userId;
-          }).length;
-          conversationList.push({
+          const unreadCount = convMsgs.filter(
+            (m3) => new Date(m3.createdAt) > lastRead && m3.senderId !== userId
+          ).length;
+          const directPairKey = conv.type === "DIRECT" && otherUserId ? [userId, otherUserId].sort().join(":") : null;
+          rawList.push({
             id: conv.id,
             type: conv.type,
             metadata: conv.metadata,
@@ -79643,27 +79946,54 @@ var init_messaging2 = __esm({
               createdAt: lastMsg.createdAt
             } : null,
             unreadCount,
-            lastActiveAt: lastMsg ? new Date(lastMsg.createdAt) : new Date(conv.updatedAt || conv.createdAt)
+            lastActiveAt: lastMsg ? new Date(lastMsg.createdAt) : new Date(conv.updatedAt || conv.createdAt),
+            _directPairKey: directPairKey
           });
         }
-        conversationList.sort((a5, b5) => b5.lastActiveAt.getTime() - a5.lastActiveAt.getTime());
-        return conversationList.map(({ lastActiveAt, ...rest }) => rest);
+        rawList.sort((a5, b5) => b5.lastActiveAt.getTime() - a5.lastActiveAt.getTime());
+        const seenDirectPairs = /* @__PURE__ */ new Map();
+        const deduped = [];
+        for (const item of rawList) {
+          if (item._directPairKey) {
+            const existing = seenDirectPairs.get(item._directPairKey);
+            if (existing) {
+              existing.unreadCount += item.unreadCount;
+              continue;
+            }
+            seenDirectPairs.set(item._directPairKey, item);
+          }
+          deduped.push(item);
+        }
+        return deduped.map(({ lastActiveAt, _directPairKey, ...rest }) => rest);
       }
       /**
        * Calculate unread message counts for a user
        */
       static async getUnreadCounts(userId) {
         const userPartList = await db.select().from(conversationParticipants).where(eq(conversationParticipants.userId, userId));
+        if (userPartList.length === 0) {
+          return { totalUnread: 0, conversationCounts: {} };
+        }
+        const convIds = Array.from(new Set(userPartList.map((p3) => p3.conversationId)));
+        const allMsgs = await db.select().from(messages).where(inArray(messages.conversationId, convIds));
+        const lastReadByConv = new Map(
+          userPartList.map((p3) => [
+            p3.conversationId,
+            p3.lastReadAt ? new Date(p3.lastReadAt) : /* @__PURE__ */ new Date(0)
+          ])
+        );
         let totalUnread = 0;
         const conversationCounts = {};
-        for (const part of userPartList) {
-          const lastRead = part.lastReadAt ? new Date(part.lastReadAt) : /* @__PURE__ */ new Date(0);
-          const allMsgs = await db.select().from(messages).where(eq(messages.conversationId, part.conversationId));
-          const unreadCount = allMsgs.filter((m3) => {
-            return new Date(m3.createdAt) > lastRead && m3.senderId !== userId;
-          }).length;
-          conversationCounts[part.conversationId] = unreadCount;
-          totalUnread += unreadCount;
+        for (const cid of convIds) {
+          conversationCounts[cid] = 0;
+        }
+        for (const m3 of allMsgs) {
+          if (m3.senderId === userId) continue;
+          const lastRead = lastReadByConv.get(m3.conversationId) || /* @__PURE__ */ new Date(0);
+          if (new Date(m3.createdAt) > lastRead) {
+            conversationCounts[m3.conversationId] = (conversationCounts[m3.conversationId] || 0) + 1;
+            totalUnread += 1;
+          }
         }
         return {
           totalUnread,
@@ -80301,11 +80631,17 @@ var init_sync = __esm({
             };
           }
           case "SUBMIT_ATHLETE_APPLICATION":
-          case "REGISTER_ATHLETE": {
+          case "REGISTER_ATHLETE":
+          case "UPDATE_ATHLETE_REGISTRATION": {
             logger.info({ payload, userId }, "Persisting offline athlete tournament application");
             return {
               eventId: payload?.eventId,
               athleteId: payload?.athleteId || userId,
+              division: payload?.division || "SENIOR",
+              weightClass: payload?.weightClass,
+              arm: payload?.arm,
+              categoryLabel: payload?.categoryLabel,
+              profileQrCode: payload?.profileQrCode || payload?.settingsIdentityQr || `ARMSPHERE-ATHLETE-QR:${userId}`,
               outcome: "APPLICATION_RECORDED"
             };
           }
@@ -80318,6 +80654,7 @@ var init_sync = __esm({
               eventId: payload?.eventId,
               registrationId: payload?.registrationId,
               athleteId: payload?.athleteId,
+              profileQrCode: payload?.profileQrCode || payload?.settingsIdentityQr,
               measuredWeightKg: payload?.measuredWeightKg ?? payload?.weight,
               status: payload?.status || "VERIFIED",
               outcome: "WEIGH_IN_VERIFIED"
@@ -80364,6 +80701,7 @@ var init_sync = __esm({
             return {
               eventId: payload?.eventId,
               passId: payload?.passId,
+              profileQrCode: payload?.profileQrCode,
               passType: payload?.passType,
               holderName: payload?.holderName,
               checkedInAt: payload?.checkedInAt || (/* @__PURE__ */ new Date()).toISOString(),
@@ -133332,14 +133670,14 @@ var require_null = __commonJS({
     function constructYamlNull() {
       return null;
     }
-    function isNull5(object) {
+    function isNull6(object) {
       return object === null;
     }
     module.exports = new Type("tag:yaml.org,2002:null", {
       kind: "scalar",
       resolve: resolveYamlNull,
       construct: constructYamlNull,
-      predicate: isNull5,
+      predicate: isNull6,
       represent: {
         canonical: function() {
           return "~";
@@ -151332,32 +151670,38 @@ function parseUserAgent(uaString = "") {
   let os2 = "Unknown OS";
   let browser = "Unknown Browser";
   const lowerUA = uaString.toLowerCase();
-  if (lowerUA.includes("mobi") || lowerUA.includes("iphone") || lowerUA.includes("android")) {
+  if (lowerUA.includes("armsphere-mobile") || lowerUA.includes("armsphere mobile") || lowerUA.includes("flutter") || lowerUA.includes("dart/") || lowerUA.includes("mobi") || lowerUA.includes("iphone") || lowerUA.includes("android")) {
     device = "Mobile";
   } else if (lowerUA.includes("tablet") || lowerUA.includes("ipad")) {
     device = "Tablet";
   }
-  if (lowerUA.includes("windows")) {
-    os2 = "Windows";
-  } else if (lowerUA.includes("macintosh") || lowerUA.includes("mac os")) {
-    os2 = "macOS";
-  } else if (lowerUA.includes("iphone") || lowerUA.includes("ipad")) {
+  if (lowerUA.includes("iphone") || lowerUA.includes("ipad") || lowerUA.includes("ios")) {
     os2 = "iOS";
   } else if (lowerUA.includes("android")) {
     os2 = "Android";
+  } else if (lowerUA.includes("windows")) {
+    os2 = "Windows";
+  } else if (lowerUA.includes("macintosh") || lowerUA.includes("mac os") || lowerUA.includes("macos")) {
+    os2 = "macOS";
   } else if (lowerUA.includes("linux")) {
     os2 = "Linux";
+  } else if (lowerUA.includes("dart/") || lowerUA.includes("flutter")) {
+    os2 = "Mobile OS";
   }
-  if (lowerUA.includes("firefox")) {
+  if (lowerUA.includes("armsphere-mobile") || lowerUA.includes("armsphere mobile")) {
+    browser = "ArmSphere Mobile App";
+  } else if (lowerUA.includes("flutter") || lowerUA.includes("dart/")) {
+    browser = "ArmSphere Mobile App";
+  } else if (lowerUA.includes("edg/") || lowerUA.includes("edge")) {
+    browser = "Edge";
+  } else if (lowerUA.includes("opera") || lowerUA.includes("opr")) {
+    browser = "Opera";
+  } else if (lowerUA.includes("firefox")) {
     browser = "Firefox";
   } else if (lowerUA.includes("chrome") && !lowerUA.includes("chromium")) {
     browser = "Chrome";
   } else if (lowerUA.includes("safari") && !lowerUA.includes("chrome")) {
     browser = "Safari";
-  } else if (lowerUA.includes("edge")) {
-    browser = "Edge";
-  } else if (lowerUA.includes("opera") || lowerUA.includes("opr")) {
-    browser = "Opera";
   }
   return { device, os: os2, browser };
 }
@@ -151381,11 +151725,15 @@ var AuthService = class {
     if (input.role && input.role !== UserRole.ATHLETE) {
       logger.warn({ requestedRole: input.role, email: emailLower }, "Ignoring privileged role supplied during public registration.");
     }
+    const userId = v4_default();
+    const canonicalProfileQrCode = `ARMSPHERE-ATHLETE-QR:${userId}`;
     const [newUser] = await db.insert(users).values({
+      id: userId,
       email: emailLower,
       username: usernameTrim,
       passwordHash: hashedPassword,
       fullName: input.fullName.trim(),
+      profileQrCode: canonicalProfileQrCode,
       role: safeRole,
       isActive: true
     }).returning();
@@ -151445,13 +151793,17 @@ var AuthService = class {
       throw new UnauthorizedError("Invalid email or password credentials provided.");
     }
     cacheDel(attemptsKey);
-    const securityAnalysis = await SessionSecurityService.evaluateLoginSession(
+    const securityPromise = SessionSecurityService.evaluateLoginSession(
       user.id,
       ip,
       userAgent
-    );
+    ).catch((secErr) => {
+      logger.warn({ err: secErr, userId: user.id }, "Non-fatal session security analysis error");
+      return null;
+    });
     if (userAny.mfaEnabled) {
       if (!context?.mfaCode) {
+        await securityPromise;
         return {
           mfaRequired: true,
           userId: user.id,
@@ -151483,15 +151835,6 @@ var AuthService = class {
     const refreshToken2 = generateRefreshToken(user.id, user.email, user.role, tokenFamily, env_default.JWT_REFRESH_SECRET);
     const refreshTokenHash = sha256(refreshToken2);
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1e3);
-    await db.insert(userSessions).values({
-      userId: user.id,
-      tokenFamily,
-      refreshTokenHash,
-      isRevoked: false,
-      expiresAt,
-      ipAddress: ip,
-      userAgent
-    });
     let deviceTrustToken = null;
     if (context?.rememberDevice) {
       const deviceTrustPayload = {
@@ -151501,21 +151844,35 @@ var AuthService = class {
       };
       deviceTrustToken = import_jsonwebtoken2.default.sign(deviceTrustPayload, env_default.JWT_ACCESS_SECRET, { expiresIn: "30d" });
     }
-    await db.insert(auditLogs).values({
-      userId: user.id,
-      action: "AUTH_LOGIN",
-      details: { tokenFamily, rememberDevice: !!context?.rememberDevice },
-      ipAddress: ip,
-      userAgent
-    });
-    const [athleteProfile] = await db.select().from(athleteProfiles).where(and(eq(athleteProfiles.userId, user.id), eq(athleteProfiles.isDeleted, false))).limit(1);
-    const isOnboarded = !!athleteProfile;
-    const rolesOverview = await UserRoleService.getUserRolesOverview(user.id);
+    const [, , , athleteProfileRows, rolesOverview] = await Promise.all([
+      securityPromise,
+      db.insert(userSessions).values({
+        userId: user.id,
+        tokenFamily,
+        refreshTokenHash,
+        isRevoked: false,
+        expiresAt,
+        ipAddress: ip,
+        userAgent
+      }),
+      db.insert(auditLogs).values({
+        userId: user.id,
+        action: "AUTH_LOGIN",
+        details: { tokenFamily, rememberDevice: !!context?.rememberDevice },
+        ipAddress: ip,
+        userAgent
+      }),
+      db.select({ id: athleteProfiles.id }).from(athleteProfiles).where(and(eq(athleteProfiles.userId, user.id), eq(athleteProfiles.isDeleted, false))).limit(1),
+      UserRoleService.getUserRolesOverview(user.id)
+    ]);
+    const isOnboarded = athleteProfileRows.length > 0;
     const { passwordHash, ...userResponse } = user;
+    const profileQrCode = user.profileQrCode || `ARMSPHERE-ATHLETE-QR:${user.id}`;
     return {
       mfaRequired: false,
       user: {
         ...userResponse,
+        profileQrCode,
         isOnboarded,
         verifiedRoles: rolesOverview.verifiedRoles,
         roleGrants: rolesOverview.roleGrants,
@@ -151588,10 +151945,12 @@ var AuthService = class {
     const isOnboarded = !!athleteProfile;
     const rolesOverview = await UserRoleService.getUserRolesOverview(user.id);
     const { passwordHash, ...userResponse } = user;
+    const profileQrCode = user.profileQrCode || `ARMSPHERE-ATHLETE-QR:${user.id}`;
     return {
       mfaRequired: false,
       user: {
         ...userResponse,
+        profileQrCode,
         isOnboarded,
         verifiedRoles: rolesOverview.verifiedRoles,
         roleGrants: rolesOverview.roleGrants,
@@ -151677,8 +152036,10 @@ var AuthService = class {
     const isOnboarded = !!athleteProfile;
     const rolesOverview = await UserRoleService.getUserRolesOverview(userId);
     const { passwordHash, ...profile } = user;
+    const profileQrCode = user.profileQrCode || `ARMSPHERE-ATHLETE-QR:${user.id}`;
     return {
       ...profile,
+      profileQrCode,
       isOnboarded,
       verifiedRoles: rolesOverview.verifiedRoles,
       roleGrants: rolesOverview.roleGrants,
@@ -152128,11 +152489,14 @@ var SocialAuthService = class {
       } else {
         const username = `${profile.provider}_${crypto10.randomBytes(4).toString("hex")}`;
         const randomPasswordHash = `SOCIAL_AUTH_ONLY_${crypto10.randomBytes(16).toString("hex")}`;
+        const userId = v4_default();
         const insertData = {
+          id: userId,
           email: emailLower,
           username,
           fullName: profile.name,
           passwordHash: randomPasswordHash,
+          profileQrCode: `ARMSPHERE-ATHLETE-QR:${userId}`,
           role: "ATHLETE",
           isActive: true
         };
@@ -152179,8 +152543,12 @@ var SocialAuthService = class {
       userAgent: context?.userAgent || "unknown-ua"
     });
     const { passwordHash, ...userResponse } = user;
+    const profileQrCode = user.profileQrCode || `ARMSPHERE-ATHLETE-QR:${user.id}`;
     return {
-      user: userResponse,
+      user: {
+        ...userResponse,
+        profileQrCode
+      },
       accessToken,
       refreshToken: refreshToken2
     };
@@ -152199,6 +152567,7 @@ init_userRole();
 init_env();
 var ApplyRoleSchema = external_exports.object({
   role: external_exports.nativeEnum(UserRole),
+  targetOrganizationId: external_exports.string().uuid({ message: "Please select a valid organization." }).optional(),
   experienceDetails: external_exports.string().optional(),
   certificationNumber: external_exports.string().optional(),
   documents: external_exports.any().optional()
@@ -152222,6 +152591,24 @@ var LoginSchema = external_exports.object({
 var RefreshSchema = external_exports.object({
   refreshToken: external_exports.string().min(1, { message: "Refresh token is required." })
 });
+function extractClientIp(req) {
+  const cfIp = req.headers["cf-connecting-ip"];
+  const xRealIp = req.headers["x-real-ip"];
+  const xForwardedFor = req.headers["x-forwarded-for"];
+  let raw = "";
+  if (typeof cfIp === "string" && cfIp.trim()) {
+    raw = cfIp.trim();
+  } else if (typeof xForwardedFor === "string" && xForwardedFor.trim()) {
+    raw = xForwardedFor.split(",")[0].trim();
+  } else if (Array.isArray(xForwardedFor) && xForwardedFor.length > 0) {
+    raw = String(xForwardedFor[0]).split(",")[0].trim();
+  } else if (typeof xRealIp === "string" && xRealIp.trim()) {
+    raw = xRealIp.trim();
+  } else {
+    raw = req.ip || req.socket?.remoteAddress || "";
+  }
+  return raw.replace(/^::ffff:/i, "").trim() || "unknown-ip";
+}
 var AuthController = class {
   /**
    * Handles user registration POST /auth/register
@@ -152239,7 +152626,7 @@ var AuthController = class {
         fullName: parsed2.data.fullName,
         role: parsed2.data.role
       }, {
-        ipAddress: req.ip,
+        ipAddress: extractClientIp(req),
         userAgent: req.headers["user-agent"]
       });
       res.status(201).json({
@@ -152263,7 +152650,7 @@ var AuthController = class {
         parsed2.data.email,
         parsed2.data.password,
         {
-          ipAddress: req.ip,
+          ipAddress: extractClientIp(req),
           userAgent: req.headers["user-agent"],
           mfaCode: parsed2.data.mfaCode
         }
@@ -152311,7 +152698,7 @@ var AuthController = class {
         throw parsed2.error;
       }
       const result = await AuthService.rotateSession(parsed2.data.refreshToken, {
-        ipAddress: req.ip,
+        ipAddress: extractClientIp(req),
         userAgent: req.headers["user-agent"]
       });
       res.cookie("refreshToken", result.refreshToken, {
@@ -152732,6 +153119,7 @@ var AuthController = class {
         req.user.id,
         parsed2.data.role,
         {
+          targetOrganizationId: parsed2.data.targetOrganizationId,
           experienceDetails: parsed2.data.experienceDetails,
           certificationNumber: parsed2.data.certificationNumber,
           documents: parsed2.data.documents
@@ -152873,7 +153261,9 @@ function authenticate(req, res, next) {
     req.user = {
       id: decoded.sub,
       email: decoded.email,
-      role: decoded.role
+      role: decoded.role,
+      orgId: decoded.orgId,
+      orgName: decoded.orgName
     };
     next();
   } catch (error2) {
@@ -152928,7 +153318,9 @@ function optionalAuthenticate(req, res, next) {
       req.user = {
         id: decoded.sub,
         email: decoded.email,
-        role: decoded.role
+        role: decoded.role,
+        orgId: decoded.orgId,
+        orgName: decoded.orgName
       };
     }
     next();
@@ -153422,7 +153814,8 @@ var AthleteService = class _AthleteService {
       latitude: input.latitude ?? null,
       longitude: input.longitude ?? null,
       locationVisibility: normalizeLocationVisibility(input.locationVisibility),
-      locationFuzzSeed: generateLocationFuzzSeed(userId)
+      locationFuzzSeed: generateLocationFuzzSeed(userId),
+      profileQrCode: user.profileQrCode || `ARMSPHERE-ATHLETE-QR:${userId}`
     }).returning();
     await this.ensureVerificationRecord(userId);
     await db.insert(athleteBiometrics).values({
@@ -153461,8 +153854,8 @@ var AthleteService = class _AthleteService {
    */
   static async getProfileByUserId(userIdOrProfileId, viewerUserId, viewerRole) {
     let [profile] = await db.select().from(athleteProfiles).where(and(eq(athleteProfiles.userId, userIdOrProfileId), eq(athleteProfiles.isDeleted, false))).limit(1);
-    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!profile && UUID_RE.test(userIdOrProfileId)) {
+    const UUID_RE2 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!profile && UUID_RE2.test(userIdOrProfileId)) {
       [profile] = await db.select().from(athleteProfiles).where(and(eq(athleteProfiles.id, userIdOrProfileId), eq(athleteProfiles.isDeleted, false))).limit(1);
     }
     if (!profile) {
@@ -153477,75 +153870,129 @@ var AthleteService = class _AthleteService {
         }
       }
     }
-    let club = null;
-    if (profile.clubId) {
-      const [clubRecord] = await db.select().from(athleteClubs).where(eq(athleteClubs.id, profile.clubId)).limit(1);
-      club = clubRecord || null;
-    }
-    const [verification] = await db.select().from(athleteVerifications).where(eq(athleteVerifications.athleteId, ownerUserId)).limit(1);
-    const [biometrics] = await db.select().from(athleteBiometrics).where(eq(athleteBiometrics.athleteId, ownerUserId)).limit(1);
-    const [measurements] = await db.select().from(athleteMeasurements).where(eq(athleteMeasurements.athleteId, ownerUserId)).limit(1);
-    const [socials] = await db.select().from(athleteSocialLinks).where(eq(athleteSocialLinks.athleteId, ownerUserId)).limit(1);
+    const candidateIds = Array.from(new Set([profile.id, profile.userId].filter(Boolean)));
+    const [
+      userRows,
+      clubRows,
+      verificationRows,
+      biometricsRows,
+      measurementsRows,
+      socialsRows,
+      verifiedMatches,
+      completedTourneyMatches,
+      activeTitles,
+      certRows
+    ] = await Promise.all([
+      Promise.resolve(
+        db.select({ profileQrCode: users.profileQrCode, fullName: users.fullName }).from(users).where(eq(users.id, ownerUserId)).limit(1)
+      ).catch(() => []),
+      profile.clubId ? Promise.resolve(
+        db.select().from(athleteClubs).where(eq(athleteClubs.id, profile.clubId)).limit(1)
+      ).catch(() => []) : Promise.resolve([]),
+      Promise.resolve(
+        db.select().from(athleteVerifications).where(eq(athleteVerifications.athleteId, ownerUserId)).limit(1)
+      ).catch(() => []),
+      Promise.resolve(
+        db.select().from(athleteBiometrics).where(eq(athleteBiometrics.athleteId, ownerUserId)).limit(1)
+      ).catch(() => []),
+      Promise.resolve(
+        db.select().from(athleteMeasurements).where(eq(athleteMeasurements.athleteId, ownerUserId)).limit(1)
+      ).catch(() => []),
+      Promise.resolve(
+        db.select().from(athleteSocialLinks).where(eq(athleteSocialLinks.athleteId, ownerUserId)).limit(1)
+      ).catch(() => []),
+      Promise.resolve(
+        db.select().from(matches).where(
+          and(
+            or(
+              inArray(matches.challengerId, candidateIds),
+              inArray(matches.opponentId, candidateIds)
+            ),
+            inArray(matches.status, ["VERIFIED", "COMPLETED"])
+          )
+        )
+      ).catch(() => []),
+      Promise.resolve(
+        db.select().from(tournamentMatches).where(
+          and(
+            or(
+              inArray(tournamentMatches.athleteAId, candidateIds),
+              inArray(tournamentMatches.athleteBId, candidateIds)
+            ),
+            inArray(tournamentMatches.status, ["COMPLETED", "VERIFIED"])
+          )
+        )
+      ).catch(() => []),
+      Promise.resolve(
+        db.select().from(championshipTitles).where(eq(championshipTitles.activeChampionId, profile.id))
+      ).catch(() => []),
+      Promise.resolve(
+        db.select({
+          id: refereeCertifications.id,
+          userId: refereeCertifications.userId,
+          issuingOrganizationId: refereeCertifications.issuingOrganizationId,
+          certificationLevel: refereeCertifications.certificationLevel,
+          issuedAt: refereeCertifications.issuedAt,
+          expiresAt: refereeCertifications.expiresAt,
+          issuingBody: refereeCertifications.issuingBody,
+          status: refereeCertifications.status,
+          organizationName: organizations.name
+        }).from(refereeCertifications).leftJoin(organizations, eq(refereeCertifications.issuingOrganizationId, organizations.id)).where(eq(refereeCertifications.userId, ownerUserId)).orderBy(desc(refereeCertifications.issuedAt))
+      ).catch(() => [])
+    ]);
+    const club = clubRows[0] || null;
+    const verification = verificationRows[0] || null;
+    const biometrics = biometricsRows[0] || null;
+    const measurements = measurementsRows[0] || null;
+    const socials = socialsRows[0] || null;
+    const formattedCertifications = certRows.map((c5) => ({
+      id: c5.id,
+      userId: c5.userId,
+      issuingOrganizationId: c5.issuingOrganizationId,
+      issuingOrganizationName: c5.organizationName || c5.issuingBody,
+      issuingBody: c5.organizationName || c5.issuingBody,
+      certificationLevel: c5.certificationLevel,
+      issuedAt: c5.issuedAt,
+      expiresAt: c5.expiresAt,
+      status: c5.status
+    }));
     let wins = 0;
     let losses = 0;
     let rightArmWins = 0;
     let rightArmLosses = 0;
     let leftArmWins = 0;
     let leftArmLosses = 0;
-    let titlesCount = 0;
-    const candidateIds = Array.from(new Set([profile.id, profile.userId].filter(Boolean)));
-    try {
-      const verifiedMatches = await db.select().from(matches).where(
-        and(
-          or(
-            inArray(matches.challengerId, candidateIds),
-            inArray(matches.opponentId, candidateIds)
-          ),
-          eq(matches.status, "VERIFIED")
-        )
-      );
-      const seenMatchIds = /* @__PURE__ */ new Set();
-      for (const m3 of verifiedMatches) {
-        seenMatchIds.add(m3.id);
-        const arm = (m3.arm || "RIGHT").toString().toUpperCase();
-        const isWinner = m3.winnerId ? candidateIds.includes(m3.winnerId) : false;
-        if (isWinner) {
-          wins++;
-          if (arm === "LEFT") leftArmWins++;
-          else rightArmWins++;
-        } else if (m3.winnerId) {
-          losses++;
-          if (arm === "LEFT") leftArmLosses++;
-          else rightArmLosses++;
-        }
+    const seenMatchIds = /* @__PURE__ */ new Set();
+    for (const m3 of verifiedMatches) {
+      seenMatchIds.add(m3.id);
+      const arm = (m3.arm || "RIGHT").toString().toUpperCase();
+      const isWinner = m3.winnerId ? candidateIds.includes(m3.winnerId) : false;
+      if (isWinner) {
+        wins++;
+        if (arm === "LEFT") leftArmWins++;
+        else rightArmWins++;
+      } else if (m3.winnerId) {
+        losses++;
+        if (arm === "LEFT") leftArmLosses++;
+        else rightArmLosses++;
       }
-      try {
-        const completedTourneyMatches = await db.select().from(tournamentMatches).where(
-          and(
-            or(
-              inArray(tournamentMatches.athleteAId, candidateIds),
-              inArray(tournamentMatches.athleteBId, candidateIds)
-            ),
-            eq(tournamentMatches.status, "COMPLETED")
-          )
-        );
-        for (const tm of completedTourneyMatches) {
-          if (seenMatchIds.has(tm.id)) continue;
-          const isWinner = tm.winnerId ? candidateIds.includes(tm.winnerId) : false;
-          if (isWinner) {
-            wins++;
-            rightArmWins++;
-          } else if (tm.winnerId) {
-            losses++;
-            rightArmLosses++;
-          }
-        }
-      } catch (_) {
-      }
-      const activeTitles = await db.select().from(championshipTitles).where(eq(championshipTitles.activeChampionId, profile.id));
-      titlesCount = activeTitles.length;
-    } catch (_) {
     }
+    for (const tm of completedTourneyMatches) {
+      if (seenMatchIds.has(tm.id)) continue;
+      seenMatchIds.add(tm.id);
+      const arm = (tm.arm || "RIGHT").toString().toUpperCase();
+      const isWinner = tm.winnerId ? candidateIds.includes(tm.winnerId) : false;
+      if (isWinner) {
+        wins++;
+        if (arm === "LEFT") leftArmWins++;
+        else rightArmWins++;
+      } else if (tm.winnerId) {
+        losses++;
+        if (arm === "LEFT") leftArmLosses++;
+        else rightArmLosses++;
+      }
+    }
+    const titlesCount = activeTitles.length;
     const totalRight = rightArmWins + rightArmLosses;
     const totalLeft = leftArmWins + leftArmLosses;
     const totalAll = wins + losses;
@@ -153558,8 +154005,10 @@ var AthleteService = class _AthleteService {
     if (!isOwner) {
       delete safeProfile.stripeCustomerId;
     }
+    const canonicalQr = userRows[0]?.profileQrCode || profile.profileQrCode || `ARMSPHERE-ATHLETE-QR:${ownerUserId}`;
     return {
       ...safeProfile,
+      profileQrCode: canonicalQr,
       wins,
       losses,
       rightArmWins,
@@ -153575,7 +154024,8 @@ var AthleteService = class _AthleteService {
       rejectionReason: isOwner || isPrivileged ? verification?.rejectionReason || null : null,
       biometrics: biometrics || null,
       measurements: measurements || null,
-      socialLinks: socials || null
+      socialLinks: socials || null,
+      refereeCertifications: formattedCertifications
     };
   }
   /**
@@ -153743,7 +154193,7 @@ var AthleteService = class _AthleteService {
       }
     }
     if (filters.displayName) {
-      queryConditions.push(like(athleteProfiles.displayName, `%${filters.displayName}%`));
+      queryConditions.push(ilike(athleteProfiles.displayName, `%${filters.displayName.trim()}%`));
     }
     if (filters.province) {
       queryConditions.push(eq(athleteProfiles.province, filters.province));
@@ -153778,8 +154228,9 @@ var AthleteService = class _AthleteService {
       longitude: athleteProfiles.longitude,
       locationVisibility: athleteProfiles.locationVisibility,
       locationFuzzSeed: athleteProfiles.locationFuzzSeed,
-      verificationStatus: athleteVerifications.status
-    }).from(athleteProfiles).leftJoin(
+      verificationStatus: athleteVerifications.status,
+      profileQrCode: sql`COALESCE(${users.profileQrCode}, ${athleteProfiles.profileQrCode}, 'ARMSPHERE-ATHLETE-QR:' || ${athleteProfiles.userId}::text)`
+    }).from(athleteProfiles).leftJoin(users, eq(athleteProfiles.userId, users.id)).leftJoin(
       athleteVerifications,
       eq(athleteProfiles.userId, athleteVerifications.athleteId)
     ).where(and(...queryConditions)).limit(limit).offset(offset).orderBy(desc(athleteProfiles.createdAt));
@@ -153891,38 +154342,36 @@ var AthleteService = class _AthleteService {
     if (!athlete1Id || !athlete2Id) {
       throw new BadRequestError("Both athlete1Id and athlete2Id are required for comparison");
     }
-    const athlete1 = await _AthleteService.getProfileByUserId(athlete1Id);
-    const athlete2 = await _AthleteService.getProfileByUserId(athlete2Id);
+    const [athlete1, athlete2] = await Promise.all([
+      _AthleteService.getProfileByUserId(athlete1Id),
+      _AthleteService.getProfileByUserId(athlete2Id)
+    ]);
     if (!athlete1 || !athlete2) {
       throw new NotFoundError("One or both athletes could not be found");
     }
     const a1Ids = Array.from(new Set([athlete1.id, athlete1.userId].filter(Boolean)));
     const a2Ids = Array.from(new Set([athlete2.id, athlete2.userId].filter(Boolean)));
-    let tourneyH2H = [];
-    try {
-      tourneyH2H = await db.select().from(tournamentMatches).where(
-        and(
-          sql`(${tournamentMatches.athleteAId} = ${athlete1.id} AND ${tournamentMatches.athleteBId} = ${athlete2.id}) OR (${tournamentMatches.athleteAId} = ${athlete2.id} AND ${tournamentMatches.athleteBId} = ${athlete1.id})`,
-          eq(tournamentMatches.status, "COMPLETED")
+    const [tourneyH2H, sanctionedH2H] = await Promise.all([
+      Promise.resolve(
+        db.select().from(tournamentMatches).where(
+          and(
+            sql`(${tournamentMatches.athleteAId} = ${athlete1.id} AND ${tournamentMatches.athleteBId} = ${athlete2.id}) OR (${tournamentMatches.athleteAId} = ${athlete2.id} AND ${tournamentMatches.athleteBId} = ${athlete1.id})`,
+            inArray(tournamentMatches.status, ["COMPLETED", "VERIFIED"])
+          )
         )
-      );
-    } catch (_) {
-      tourneyH2H = [];
-    }
-    let sanctionedH2H = [];
-    try {
-      sanctionedH2H = await db.select().from(matches).where(
-        and(
-          or(
-            and(inArray(matches.challengerId, a1Ids), inArray(matches.opponentId, a2Ids)),
-            and(inArray(matches.challengerId, a2Ids), inArray(matches.opponentId, a1Ids))
-          ),
-          eq(matches.status, "VERIFIED")
+      ).catch(() => []),
+      Promise.resolve(
+        db.select().from(matches).where(
+          and(
+            or(
+              and(inArray(matches.challengerId, a1Ids), inArray(matches.opponentId, a2Ids)),
+              and(inArray(matches.challengerId, a2Ids), inArray(matches.opponentId, a1Ids))
+            ),
+            inArray(matches.status, ["VERIFIED", "COMPLETED"])
+          )
         )
-      );
-    } catch (_) {
-      sanctionedH2H = [];
-    }
+      ).catch(() => [])
+    ]);
     const seenIds = /* @__PURE__ */ new Set();
     const combinedH2H = [];
     for (const m3 of tourneyH2H) {
@@ -153968,65 +154417,19 @@ var AthleteService = class _AthleteService {
         else rightArmAthlete2Wins++;
       }
     }
-    const computeArmWinRates = async (profile) => {
-      const candidateIds = Array.from(new Set([profile.id, profile.userId].filter(Boolean)));
-      let rightWins = profile.rightArmWins ?? 0;
-      let rightLosses = profile.rightArmLosses ?? 0;
-      let leftWins = profile.leftArmWins ?? 0;
-      let leftLosses = profile.leftArmLosses ?? 0;
-      if (rightWins + rightLosses + leftWins + leftLosses === 0) {
-        try {
-          const verified = await db.select().from(matches).where(
-            and(
-              or(
-                inArray(matches.challengerId, candidateIds),
-                inArray(matches.opponentId, candidateIds)
-              ),
-              eq(matches.status, "VERIFIED")
-            )
-          );
-          const seenIds2 = /* @__PURE__ */ new Set();
-          for (const m3 of verified) {
-            seenIds2.add(m3.id);
-            const arm = (m3.arm || "RIGHT").toString().toUpperCase();
-            const won = m3.winnerId ? candidateIds.includes(m3.winnerId) : false;
-            if (arm === "LEFT") {
-              if (won) leftWins++;
-              else if (m3.winnerId) leftLosses++;
-            } else {
-              if (won) rightWins++;
-              else if (m3.winnerId) rightLosses++;
-            }
-          }
-          try {
-            const tourneyDone = await db.select().from(tournamentMatches).where(
-              and(
-                or(
-                  inArray(tournamentMatches.athleteAId, candidateIds),
-                  inArray(tournamentMatches.athleteBId, candidateIds)
-                ),
-                inArray(tournamentMatches.status, ["COMPLETED", "VERIFIED"])
-              )
-            );
-            for (const tm of tourneyDone) {
-              if (seenIds2.has(tm.id)) continue;
-              const won = tm.winnerId ? candidateIds.includes(tm.winnerId) : false;
-              if (won) rightWins++;
-              else if (tm.winnerId) rightLosses++;
-            }
-          } catch (_) {
-          }
-        } catch (_) {
-        }
-      }
+    const extractArmWinRates = (profile) => {
+      const rightWins = Number(profile.rightArmWins ?? 0);
+      const rightLosses = Number(profile.rightArmLosses ?? 0);
+      const leftWins = Number(profile.leftArmWins ?? 0);
+      const leftLosses = Number(profile.leftArmLosses ?? 0);
       const rightTotal = rightWins + rightLosses;
       const leftTotal = leftWins + leftLosses;
-      const totalWins = rightWins + leftWins || (profile.wins ?? 0);
-      const totalLosses = rightLosses + leftLosses || (profile.losses ?? 0);
+      const totalWins = rightWins + leftWins || Number(profile.wins ?? 0);
+      const totalLosses = rightLosses + leftLosses || Number(profile.losses ?? 0);
       const totalAll = totalWins + totalLosses;
+      const winRate = totalAll > 0 ? Math.round(totalWins / totalAll * 1e3) / 10 : 0;
       const winRateRight = rightTotal > 0 ? Math.round(rightWins / rightTotal * 1e3) / 10 : 0;
       const winRateLeft = leftTotal > 0 ? Math.round(leftWins / leftTotal * 1e3) / 10 : 0;
-      const winRate = totalAll > 0 ? Math.round(totalWins / totalAll * 1e3) / 10 : 0;
       return {
         winRateRight,
         winRateLeft,
@@ -154039,10 +154442,8 @@ var AthleteService = class _AthleteService {
         totalLosses
       };
     };
-    const [a1Rates, a2Rates] = await Promise.all([
-      computeArmWinRates(athlete1),
-      computeArmWinRates(athlete2)
-    ]);
+    const a1Rates = extractArmWinRates(athlete1);
+    const a2Rates = extractArmWinRates(athlete2);
     const a1RightElo = athlete1.rightArmElo ?? athlete1.eloRating ?? 1e3;
     const a1LeftElo = athlete1.leftArmElo ?? athlete1.eloRating ?? 1e3;
     const a2RightElo = athlete2.rightArmElo ?? athlete2.eloRating ?? 1e3;
@@ -154618,8 +155019,18 @@ var CommunityService = class {
         throw new NotFoundError("Associated match not found");
       }
     }
-    if (category && !["HIGHLIGHTS", "TUTORIALS", "GYM"].includes(category.toUpperCase())) {
-      throw new BadRequestError("Invalid category. Allowed categories are HIGHLIGHTS, TUTORIALS, or GYM.");
+    const allowedCategories = [
+      "TECHNIQUE",
+      "SPARRING",
+      "HIGHLIGHTS",
+      "TOURNAMENTS",
+      "TUTORIALS",
+      "GYM"
+    ];
+    if (category && !allowedCategories.includes(category.toUpperCase())) {
+      throw new BadRequestError(
+        "Invalid category. Allowed categories are TECHNIQUE, SPARRING, HIGHLIGHTS, TOURNAMENTS, TUTORIALS, or GYM."
+      );
     }
     if (!isGym) {
       if (exerciseType || weightKg !== void 0 && weightKg !== null || reps !== void 0 && reps !== null) {
@@ -174387,6 +174798,14 @@ var stripe_esm_node_default = Stripe;
 // apps/api/src/services/stripe.ts
 init_env();
 var stripeInstance = null;
+function isStripeConfigured() {
+  const key = (env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY || "").trim();
+  if (!key) return false;
+  if (key.includes("placeholder") || key.includes("your_") || key === "sk_test_dummy" || key === "sk_test_placeholder" || key.length < 16) {
+    return false;
+  }
+  return true;
+}
 function getStripe() {
   if (!stripeInstance) {
     const key = env.STRIPE_SECRET_KEY;
@@ -174405,11 +174824,154 @@ init_refereeCertification();
 init_env();
 init_userRole();
 var eventStep1ConfigMap = /* @__PURE__ */ new Map();
+function buildNormalizedStep1Config(existing, incoming) {
+  if (!existing && !incoming) return void 0;
+  const base = {
+    ...existing || {},
+    ...incoming?.step1Config && typeof incoming.step1Config === "object" ? incoming.step1Config : {}
+  };
+  const topKeys = [
+    "weightCategories",
+    "formatCategory",
+    "eliminationSubFormat",
+    "entryFeePkr",
+    "awardsConfig",
+    "spectatorGateConfig",
+    "tableCount",
+    "tables",
+    "appliedAthletes"
+  ];
+  if (incoming) {
+    for (const k5 of topKeys) {
+      if (incoming[k5] !== void 0) {
+        base[k5] = incoming[k5];
+      }
+    }
+  }
+  return Object.keys(base).length > 0 ? base : void 0;
+}
+function formatArmDisplayLabel(armRaw) {
+  const upper = (armRaw || "RIGHT").toString().trim().toUpperCase();
+  if (upper === "LEFT" || upper.includes("LEFT")) return "Left Arm";
+  if (upper === "BOTH" || upper.includes("BOTH")) return "Both Arms";
+  return "Right Arm";
+}
 var TournamentService = class _TournamentService {
+  static async enrichEventPayload(event, viewerUserId) {
+    if (!event || !event.id) return event;
+    const step1 = eventStep1ConfigMap.get(event.id);
+    if (step1) {
+      event.step1Config = step1;
+      if (Array.isArray(step1.weightCategories) && !Array.isArray(event.weightCategories)) {
+        event.weightCategories = step1.weightCategories;
+      }
+      if (step1.formatCategory !== void 0 && event.formatCategory === void 0) {
+        event.formatCategory = step1.formatCategory;
+      }
+      if (step1.eliminationSubFormat !== void 0 && event.eliminationSubFormat === void 0) {
+        event.eliminationSubFormat = step1.eliminationSubFormat;
+      }
+      if (step1.entryFeePkr !== void 0 && event.entryFeePkr === void 0) {
+        event.entryFeePkr = step1.entryFeePkr;
+      }
+      if (step1.awardsConfig !== void 0 && event.awardsConfig === void 0) {
+        event.awardsConfig = step1.awardsConfig;
+      }
+      if (step1.spectatorGateConfig !== void 0 && event.spectatorGateConfig === void 0) {
+        event.spectatorGateConfig = step1.spectatorGateConfig;
+      }
+      if (step1.tableCount !== void 0 && event.tableCount === void 0) {
+        event.tableCount = step1.tableCount;
+      }
+      if (Array.isArray(step1.tables) && !Array.isArray(event.tables)) {
+        event.tables = step1.tables;
+      }
+    }
+    try {
+      if (!Array.isArray(event.weightCategories) || event.weightCategories.length === 0) {
+        const eventBrackets = await db.select().from(brackets).where(eq(brackets.eventId, event.id));
+        if (Array.isArray(eventBrackets) && eventBrackets.length > 0) {
+          event.weightCategories = eventBrackets.map((b5, idx) => ({
+            id: b5.id?.toString() || `wc-${idx}`,
+            label: b5.weightClass?.toString() || b5.name?.toString() || `Division ${idx + 1}`,
+            weightLabel: b5.weightClass?.toString() || b5.name?.toString() || `Division ${idx + 1}`,
+            division: b5.division?.toString() || "SENIOR",
+            enabled: true,
+            arm: (b5.arm?.toString() || "RIGHT").toUpperCase(),
+            format: b5.format?.toString()
+          }));
+        }
+      }
+    } catch (_) {
+    }
+    try {
+      const regRows = await db.select().from(eventRegistrations).where(
+        and(
+          eq(eventRegistrations.eventId, event.id),
+          not(eq(eventRegistrations.status, "REJECTED"))
+        )
+      );
+      if (Array.isArray(regRows)) {
+        const athleteIds = Array.from(
+          new Set(
+            regRows.map((r5) => r5.athleteId).filter((aid) => typeof aid === "string" && aid.length > 0)
+          )
+        );
+        const profileByAthleteId = /* @__PURE__ */ new Map();
+        if (athleteIds.length > 0) {
+          try {
+            const profiles = await db.select().from(athleteProfiles).where(inArray(athleteProfiles.id, athleteIds));
+            for (const p3 of profiles) {
+              profileByAthleteId.set(p3.id, p3);
+            }
+          } catch (_) {
+          }
+        }
+        const mappedRegs = regRows.map((r5) => {
+          const prof = profileByAthleteId.get(r5.athleteId);
+          const ownerUserId = prof?.userId ?? r5.athleteId;
+          const armFormatted = formatArmDisplayLabel(r5.arm);
+          const fullName = r5.athleteFullName || prof?.displayName || "ArmSphere Athlete";
+          const qrCode = r5.profileQrCode || (ownerUserId ? `ARMSPHERE-ATHLETE-QR:${ownerUserId}` : null);
+          return {
+            id: r5.id,
+            registrationId: r5.id,
+            eventId: r5.eventId,
+            athleteId: r5.athleteId,
+            userId: ownerUserId,
+            athleteName: fullName,
+            fullName,
+            profileQrCode: qrCode,
+            division: r5.division,
+            weightClass: r5.weightClass,
+            arm: r5.arm,
+            categoryLabel: `${r5.weightClass} \u2022 ${armFormatted}`,
+            status: r5.status,
+            notes: r5.notes ?? null,
+            createdAt: r5.createdAt,
+            updatedAt: r5.updatedAt
+          };
+        });
+        event.registeredCount = mappedRegs.length;
+        if (mappedRegs.length > 0 || !Array.isArray(event.appliedAthletes)) {
+          event.appliedAthletes = mappedRegs;
+        }
+        if (viewerUserId) {
+          const myReg = mappedRegs.find(
+            (r5) => r5.userId === viewerUserId || r5.athleteId === viewerUserId
+          );
+          event.isRegistered = Boolean(myReg);
+          event.myRegistration = myReg ?? null;
+        }
+      }
+    } catch (_) {
+    }
+    return event;
+  }
   // ==========================================
   // 1. Event Management
   // ==========================================
-  static async listEvents(filters) {
+  static async listEvents(filters, viewerUserId) {
     logger.info({ filters }, "Listing tournament events");
     let query = db.select().from(events);
     const conditions = [];
@@ -174436,6 +174998,18 @@ var TournamentService = class _TournamentService {
       query = query.where(and(...conditions));
     }
     const eventsList = await query.orderBy(desc(events.startDate));
+    const orgIds = Array.from(
+      new Set(
+        eventsList.map((e5) => e5.organizationId).filter((id) => typeof id === "string" && id.length > 0)
+      )
+    );
+    const orgMap = /* @__PURE__ */ new Map();
+    if (orgIds.length > 0) {
+      const orgRows = await db.select({ id: organizations.id, name: organizations.name, slug: organizations.slug }).from(organizations).where(inArray(organizations.id, orgIds));
+      for (const o3 of orgRows) {
+        orgMap.set(o3.id, { name: o3.name, slug: o3.slug });
+      }
+    }
     for (const event of eventsList) {
       if (event.paymentQrImageUrl && !event.paymentQrImageUrl.startsWith("http")) {
         try {
@@ -174447,14 +175021,14 @@ var TournamentService = class _TournamentService {
           logger.error({ err, fileKey: event.paymentQrImageUrl }, "Failed to generate presigned download URL for QR code in listEvents");
         }
       }
-      const step1 = eventStep1ConfigMap.get(event.id);
-      if (step1) {
-        event.step1Config = step1;
-      }
+      const hostOrg = event.organizationId ? orgMap.get(event.organizationId) : null;
+      event.organizationName = hostOrg?.name ?? null;
+      event.organizationSlug = hostOrg?.slug ?? null;
+      await this.enrichEventPayload(event, viewerUserId);
     }
     return eventsList;
   }
-  static async getEvent(id) {
+  static async getEvent(id, viewerUserId) {
     logger.info({ id }, "Getting tournament event by ID");
     const [event] = await db.select().from(events).where(eq(events.id, id)).limit(1);
     if (!event) {
@@ -174470,11 +175044,62 @@ var TournamentService = class _TournamentService {
         logger.error({ err, fileKey: event.paymentQrImageUrl }, "Failed to generate presigned download URL for QR code in getEvent");
       }
     }
-    const step1 = eventStep1ConfigMap.get(event.id);
-    if (step1) {
-      event.step1Config = step1;
+    if (event.organizationId) {
+      const [hostOrg] = await db.select({ name: organizations.name, slug: organizations.slug }).from(organizations).where(eq(organizations.id, event.organizationId)).limit(1);
+      event.organizationName = hostOrg?.name ?? null;
+      event.organizationSlug = hostOrg?.slug ?? null;
+    } else {
+      event.organizationName = null;
+      event.organizationSlug = null;
     }
+    await this.enrichEventPayload(event, viewerUserId);
     return event;
+  }
+  static async getMyEventRegistration(eventId, userId) {
+    const [event] = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
+    if (!event) {
+      throw new NotFoundError("Tournament event not found.");
+    }
+    const [profile] = await db.select().from(athleteProfiles).where(or(eq(athleteProfiles.userId, userId), eq(athleteProfiles.id, userId))).limit(1);
+    const candidateAthleteIds = Array.from(
+      new Set([userId, profile?.id].filter((v) => typeof v === "string" && v.length > 0))
+    );
+    const [reg] = await db.select().from(eventRegistrations).where(
+      and(
+        eq(eventRegistrations.eventId, eventId),
+        inArray(eventRegistrations.athleteId, candidateAthleteIds),
+        not(eq(eventRegistrations.status, "REJECTED"))
+      )
+    ).limit(1);
+    if (!reg) {
+      return {
+        eventId,
+        isRegistered: false,
+        registration: null
+      };
+    }
+    const armFormatted = formatArmDisplayLabel(reg.arm);
+    return {
+      eventId,
+      isRegistered: true,
+      registration: {
+        id: reg.id,
+        registrationId: reg.id,
+        eventId: reg.eventId,
+        athleteId: reg.athleteId,
+        userId: profile?.userId ?? userId,
+        athleteName: reg.athleteFullName || profile?.displayName || "ArmSphere Athlete",
+        profileQrCode: reg.profileQrCode || `ARMSPHERE-ATHLETE-QR:${profile?.userId ?? userId}`,
+        division: reg.division,
+        weightClass: reg.weightClass,
+        arm: reg.arm,
+        categoryLabel: `${reg.weightClass} \u2022 ${armFormatted}`,
+        status: reg.status,
+        notes: reg.notes ?? null,
+        createdAt: reg.createdAt,
+        updatedAt: reg.updatedAt
+      }
+    };
   }
   static async createEvent(data, actorId) {
     logger.info({ name: data.name, actorId }, "Creating new tournament event");
@@ -174547,9 +175172,10 @@ var TournamentService = class _TournamentService {
       latitude: data.latitude ?? null,
       longitude: data.longitude ?? null
     }).returning();
-    if (data.step1Config && newEvent?.id) {
-      eventStep1ConfigMap.set(newEvent.id, data.step1Config);
-      newEvent.step1Config = data.step1Config;
+    const mergedStep1 = buildNormalizedStep1Config(void 0, data);
+    if (mergedStep1 && newEvent?.id) {
+      eventStep1ConfigMap.set(newEvent.id, mergedStep1);
+      await this.enrichEventPayload(newEvent, actorId);
     }
     return newEvent;
   }
@@ -174680,16 +175306,33 @@ var TournamentService = class _TournamentService {
     if (finalStart > finalEnd) {
       throw new BadRequestError("Event start date must be before or equal to the end date.");
     }
-    const { step1Config, idempotencyKey: _idemKey, ...dbColumns } = data;
+    const {
+      step1Config: _step1Config,
+      idempotencyKey: _idemKey,
+      weightCategories: _weightCategories,
+      formatCategory: _formatCategory,
+      eliminationSubFormat: _eliminationSubFormat,
+      entryFeePkr: _entryFeePkr,
+      awardsConfig: _awardsConfig,
+      spectatorGateConfig: _spectatorGateConfig,
+      tableCount: _tableCount,
+      tables: _tables,
+      appliedAthletes: _appliedAthletes,
+      ...dbColumns
+    } = data;
     const [updatedEvent] = await db.update(events).set({
       ...dbColumns,
       updatedAt: /* @__PURE__ */ new Date()
     }).where(eq(events.id, id)).returning();
-    if (step1Config && updatedEvent?.id) {
-      eventStep1ConfigMap.set(updatedEvent.id, step1Config);
-      updatedEvent.step1Config = step1Config;
-    } else if (updatedEvent?.id && eventStep1ConfigMap.has(updatedEvent.id)) {
-      updatedEvent.step1Config = eventStep1ConfigMap.get(updatedEvent.id);
+    const mergedStep1 = buildNormalizedStep1Config(
+      eventStep1ConfigMap.get(id),
+      data
+    );
+    if (mergedStep1 && updatedEvent?.id) {
+      eventStep1ConfigMap.set(updatedEvent.id, mergedStep1);
+    }
+    if (updatedEvent?.id) {
+      await this.enrichEventPayload(updatedEvent, actorId);
     }
     return updatedEvent;
   }
@@ -174889,6 +175532,9 @@ var TournamentService = class _TournamentService {
       if (data.division.toUpperCase() === "FEMALE" && athlete.gender?.toUpperCase() === "MALE") {
         throw new BadRequestError("Athlete is not eligible for Female division based on profile gender.");
       }
+      const [athleteUser] = await tx.select({ profileQrCode: users.profileQrCode, fullName: users.fullName }).from(users).where(eq(users.id, athlete.userId)).limit(1);
+      const canonicalProfileQr = athleteUser?.profileQrCode || athlete.profileQrCode || `ARMSPHERE-ATHLETE-QR:${athlete.userId}`;
+      const athleteSnapshotName = athlete.displayName || athleteUser?.fullName || "ArmSphere Athlete";
       const [existingReg] = await tx.select().from(eventRegistrations).where(
         and(
           eq(eventRegistrations.eventId, eventId),
@@ -174897,7 +175543,23 @@ var TournamentService = class _TournamentService {
         )
       ).limit(1);
       if (existingReg) {
-        throw new BadRequestError("Athlete is already registered in this event.");
+        const isSameSelection = existingReg.division === data.division && existingReg.weightClass === data.weightClass && existingReg.arm === data.arm;
+        if (isSameSelection && !data.allowUpdate) {
+          throw new BadRequestError("Athlete is already registered in this event.");
+        }
+        const [updatedReg] = await tx.update(eventRegistrations).set({
+          division: data.division,
+          weightClass: data.weightClass,
+          arm: data.arm,
+          notes: data.notes !== void 0 ? data.notes : existingReg.notes,
+          profileQrCode: canonicalProfileQr,
+          athleteFullName: athleteSnapshotName,
+          updatedAt: /* @__PURE__ */ new Date()
+        }).where(eq(eventRegistrations.id, existingReg.id)).returning();
+        return {
+          ...updatedReg,
+          updated: true
+        };
       }
       const currentActiveRegs = await tx.select().from(eventRegistrations).where(
         and(
@@ -174915,6 +175577,8 @@ var TournamentService = class _TournamentService {
         weightClass: data.weightClass,
         arm: data.arm,
         notes: data.notes,
+        profileQrCode: canonicalProfileQr,
+        athleteFullName: athleteSnapshotName,
         status
       }).returning();
       let clientSecret = null;
@@ -176434,16 +177098,20 @@ var TournamentService = class _TournamentService {
       id: eventRegistrations.id,
       eventId: eventRegistrations.eventId,
       athleteId: eventRegistrations.athleteId,
-      athleteName: athleteProfiles.displayName,
+      userId: athleteProfiles.userId,
+      athleteName: sql`COALESCE(NULLIF(btrim(${eventRegistrations.athleteFullName}), ''), ${athleteProfiles.displayName})`,
+      profileQrCode: sql`COALESCE(NULLIF(btrim(${eventRegistrations.profileQrCode}), ''), ${users.profileQrCode}, 'ARMSPHERE-ATHLETE-QR:' || ${athleteProfiles.userId}::text)`,
       division: eventRegistrations.division,
       weightClass: eventRegistrations.weightClass,
       arm: eventRegistrations.arm,
       status: eventRegistrations.status,
       paymentConfirmedByOrganizer: eventRegistrations.paymentConfirmedByOrganizer,
       paymentConfirmedAt: eventRegistrations.paymentConfirmedAt,
+      checkedInAt: eventRegistrations.checkedInAt,
+      checkedInBy: eventRegistrations.checkedInBy,
       createdAt: eventRegistrations.createdAt,
       updatedAt: eventRegistrations.updatedAt
-    }).from(eventRegistrations).innerJoin(athleteProfiles, eq(athleteProfiles.id, eventRegistrations.athleteId)).where(eq(eventRegistrations.eventId, eventId));
+    }).from(eventRegistrations).innerJoin(athleteProfiles, eq(athleteProfiles.id, eventRegistrations.athleteId)).leftJoin(users, eq(users.id, athleteProfiles.userId)).where(eq(eventRegistrations.eventId, eventId));
   }
   /// Every bracket match across one event, with athlete display names and the
   /// bracket category — powers the operator match-day board and referee
@@ -176522,6 +177190,296 @@ var TournamentService = class _TournamentService {
       }
     });
     return updatedReg;
+  }
+  // =========================================================================
+  // UNIFIED PROFILE QR RESOLUTION & END-TO-END VERIFICATION CHAIN
+  // =========================================================================
+  /**
+   * Parses an athlete's canonical Profile QR payload (or JSON / legacy format / ID)
+   * without trusting client-side roles or mutable fields.
+   */
+  static parseCanonicalProfileQrInput(rawInput) {
+    const raw = (rawInput || "").trim();
+    if (!raw) {
+      throw new BadRequestError("Profile QR code payload is required.");
+    }
+    const UUID_RE2 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    let candidateUuid;
+    let candidateName;
+    let canonicalQr;
+    if (raw.startsWith("{") && raw.endsWith("}")) {
+      try {
+        const parsed2 = JSON.parse(raw);
+        if (parsed2 && typeof parsed2 === "object") {
+          const qrVal = parsed2.profileQrCode ?? parsed2.qrCode;
+          if (typeof qrVal === "string" && qrVal.trim()) {
+            canonicalQr = qrVal.trim();
+          }
+          const idVal = parsed2.userId ?? parsed2.athleteId ?? parsed2.registrationId;
+          if (typeof idVal === "string" && UUID_RE2.test(idVal.trim())) {
+            candidateUuid = idVal.trim();
+          }
+          if (typeof parsed2.athleteName === "string" && parsed2.athleteName.trim()) {
+            candidateName = parsed2.athleteName.trim();
+          }
+        }
+      } catch {
+      }
+    }
+    const source = canonicalQr || raw;
+    if (source.toUpperCase().startsWith("ARMSPHERE-ATHLETE-QR:")) {
+      const parts = source.split(":");
+      const idPart = parts[1]?.trim();
+      if (idPart) {
+        if (UUID_RE2.test(idPart)) {
+          candidateUuid = idPart;
+          canonicalQr = `ARMSPHERE-ATHLETE-QR:${idPart}`;
+        } else {
+          canonicalQr = source;
+        }
+      }
+      if (parts.length >= 3 && parts[2]?.trim()) {
+        candidateName = parts.slice(2).join(":").trim();
+      }
+    } else if (!canonicalQr && UUID_RE2.test(raw)) {
+      candidateUuid = raw;
+      canonicalQr = `ARMSPHERE-ATHLETE-QR:${raw}`;
+    } else if (!canonicalQr) {
+      canonicalQr = raw;
+    }
+    return { raw, canonicalQr, candidateUuid, candidateName };
+  }
+  /**
+   * Resolves an athlete account + active registration in the given event
+   * strictly from the athlete's canonical permanent Profile QR Code.
+   */
+  static async resolveRegisteredAthleteByProfileQr(eventId, rawQrInput) {
+    const parsed2 = this.parseCanonicalProfileQrInput(rawQrInput);
+    const userConditions = [];
+    if (parsed2.canonicalQr) {
+      userConditions.push(sql`lower(${users.profileQrCode}) = lower(${parsed2.canonicalQr})`);
+      userConditions.push(sql`lower(${athleteProfiles.profileQrCode}) = lower(${parsed2.canonicalQr})`);
+    }
+    if (parsed2.raw !== parsed2.canonicalQr) {
+      userConditions.push(sql`lower(${users.profileQrCode}) = lower(${parsed2.raw})`);
+      userConditions.push(sql`lower(${eventRegistrations.profileQrCode}) = lower(${parsed2.raw})`);
+    }
+    if (parsed2.candidateUuid) {
+      userConditions.push(eq(users.id, parsed2.candidateUuid));
+      userConditions.push(eq(athleteProfiles.id, parsed2.candidateUuid));
+      userConditions.push(eq(eventRegistrations.id, parsed2.candidateUuid));
+    }
+    const eventRegs = await db.select({
+      registrationId: eventRegistrations.id,
+      eventId: eventRegistrations.eventId,
+      athleteId: eventRegistrations.athleteId,
+      userId: athleteProfiles.userId,
+      athleteName: sql`COALESCE(NULLIF(btrim(${eventRegistrations.athleteFullName}), ''), ${athleteProfiles.displayName}, ${users.fullName})`,
+      profileQrCode: sql`COALESCE(NULLIF(btrim(${users.profileQrCode}), ''), NULLIF(btrim(${eventRegistrations.profileQrCode}), ''), 'ARMSPHERE-ATHLETE-QR:' || ${athleteProfiles.userId}::text)`,
+      division: eventRegistrations.division,
+      weightClass: eventRegistrations.weightClass,
+      arm: eventRegistrations.arm,
+      status: eventRegistrations.status,
+      checkedInAt: eventRegistrations.checkedInAt,
+      checkedInBy: eventRegistrations.checkedInBy
+    }).from(eventRegistrations).innerJoin(athleteProfiles, eq(athleteProfiles.id, eventRegistrations.athleteId)).innerJoin(users, eq(users.id, athleteProfiles.userId)).where(
+      and(
+        eq(eventRegistrations.eventId, eventId),
+        userConditions.length > 0 ? or(...userConditions) : eq(eventRegistrations.profileQrCode, parsed2.raw)
+      )
+    ).limit(1);
+    if (eventRegs.length > 0) {
+      const reg = eventRegs[0];
+      if (reg.status === "REJECTED" || reg.status === "CANCELLED" || reg.status === "WITHDRAWN") {
+        throw new BadRequestError(`Athlete registration is ${reg.status.toLowerCase()} and not eligible for check-in.`);
+      }
+      return reg;
+    }
+    const accountMatches = userConditions.length > 0 ? await db.select({ id: users.id, fullName: users.fullName }).from(users).leftJoin(athleteProfiles, eq(athleteProfiles.userId, users.id)).where(
+      or(
+        ...parsed2.canonicalQr ? [sql`lower(${users.profileQrCode}) = lower(${parsed2.canonicalQr})`] : [],
+        ...parsed2.candidateUuid ? [eq(users.id, parsed2.candidateUuid), eq(athleteProfiles.id, parsed2.candidateUuid)] : []
+      )
+    ).limit(1) : [];
+    if (accountMatches.length > 0) {
+      throw new NotFoundError(
+        `${accountMatches[0].fullName} is not registered in this tournament.`
+      );
+    }
+    throw new BadRequestError(
+      "Invalid Profile QR Code or athlete is not registered in this tournament."
+    );
+  }
+  /**
+   * 1. Operator Registry & Venue Entrance Gate Check-In via Permanent Profile QR Code.
+   */
+  static async verifyEntranceQr(eventId, rawQrInput, actorId, accompanyingGuests = 0) {
+    const [event] = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
+    if (!event) {
+      throw new NotFoundError("Tournament event not found.");
+    }
+    await this.authorizeEventOfficialOrReferee(event, actorId, "verify venue gate check-in for");
+    const reg = await this.resolveRegisteredAthleteByProfileQr(eventId, rawQrInput);
+    const alreadyCheckedIn = reg.checkedInAt != null;
+    let checkedInAt = reg.checkedInAt;
+    if (!alreadyCheckedIn) {
+      const now = /* @__PURE__ */ new Date();
+      const [updated] = await db.update(eventRegistrations).set({
+        checkedInAt: now,
+        checkedInBy: actorId,
+        updatedAt: now
+      }).where(eq(eventRegistrations.id, reg.registrationId)).returning({ checkedInAt: eventRegistrations.checkedInAt });
+      checkedInAt = updated?.checkedInAt ?? now;
+      await db.insert(auditLogs).values({
+        userId: actorId,
+        action: "GATE_CHECKIN_VERIFIED",
+        details: {
+          eventId,
+          registrationId: reg.registrationId,
+          athleteId: reg.athleteId,
+          profileQrCode: reg.profileQrCode,
+          accompanyingGuests
+        }
+      });
+    }
+    return {
+      allowed: true,
+      verified: true,
+      alreadyCheckedIn,
+      registrationId: reg.registrationId,
+      eventId: reg.eventId,
+      athleteId: reg.athleteId,
+      userId: reg.userId,
+      athleteName: reg.athleteName,
+      holderName: reg.athleteName,
+      profileQrCode: reg.profileQrCode,
+      division: reg.division,
+      weightClass: reg.weightClass,
+      arm: reg.arm,
+      status: reg.status,
+      checkedInAt,
+      accompanyingGuests,
+      headline: alreadyCheckedIn ? "ALREADY CHECKED IN \u2022 ATHLETE VERIFIED \u2713" : "GREEN-LIGHT \u2022 VERIFIED ATHLETE & GUESTS ALLOWED \u2713",
+      detail: `${reg.athleteName} (${reg.division} \u2022 ${reg.weightClass} \u2022 ${reg.arm}) verified via permanent Profile QR Code.`
+    };
+  }
+  /**
+   * 2. Stage 04 Weigh-In Scanner via Permanent Profile QR Code.
+   */
+  static async scanWeighInQr(eventId, rawQrInput, actorId) {
+    const [event] = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
+    if (!event) {
+      throw new NotFoundError("Tournament event not found.");
+    }
+    await this.authorizeEventOfficialOrReferee(event, actorId, "scan weigh-in QR for");
+    const reg = await this.resolveRegisteredAthleteByProfileQr(eventId, rawQrInput);
+    const priorWeighins = await db.select().from(officialWeighins).where(eq(officialWeighins.registrationId, reg.registrationId)).orderBy(desc(officialWeighins.attemptNumber));
+    return {
+      verified: true,
+      verifiedSignature: true,
+      id: reg.registrationId,
+      registrationId: reg.registrationId,
+      eventId: reg.eventId,
+      athleteId: reg.athleteId,
+      userId: reg.userId,
+      athleteName: reg.athleteName,
+      profileQrCode: reg.profileQrCode,
+      division: reg.division,
+      weightClass: reg.weightClass,
+      arm: reg.arm,
+      status: reg.status,
+      checkedInAt: reg.checkedInAt,
+      priorWeighins,
+      isLocked: priorWeighins.some((w) => w.isLocked)
+    };
+  }
+  /**
+   * 3. Referee Table & Active Match Scanner via Permanent Profile QR Code.
+   */
+  static async verifyTableAthleteQr(params) {
+    const { eventId, tableId, rawQrInput, matchId, actorId } = params;
+    const [event] = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
+    if (!event) {
+      throw new NotFoundError("Tournament event not found.");
+    }
+    await this.authorizeEventOfficialOrReferee(event, actorId, "verify athlete on table for");
+    const [table] = await db.select().from(matchTables).where(and(eq(matchTables.id, tableId), eq(matchTables.eventId, eventId))).limit(1);
+    if (!table) {
+      throw new NotFoundError("Assigned match table not found in this tournament.");
+    }
+    const reg = await this.resolveRegisteredAthleteByProfileQr(eventId, rawQrInput);
+    const athleteMatches = await this.getEventMatches(eventId);
+    const matchesInvolvingAthlete = athleteMatches.filter(
+      (m3) => m3.athleteAId === reg.athleteId || m3.athleteBId === reg.athleteId
+    );
+    if (matchesInvolvingAthlete.length === 0) {
+      throw new NotFoundError(`${reg.athleteName} does not have a scheduled bout in this tournament yet.`);
+    }
+    let candidateBout = matchId ? matchesInvolvingAthlete.find((m3) => m3.id === matchId) : void 0;
+    if (matchId && !candidateBout) {
+      throw new ConflictError(`${reg.athleteName} is not assigned to the selected bout.`);
+    }
+    if (!candidateBout) {
+      candidateBout = matchesInvolvingAthlete.find(
+        (m3) => m3.tableId === tableId && !["COMPLETED", "VERIFIED", "CANCELLED"].includes((m3.status || "").toUpperCase())
+      );
+      if (!candidateBout) {
+        const wrongTableBout = matchesInvolvingAthlete.find(
+          (m3) => m3.tableId && m3.tableId !== tableId && !["COMPLETED", "VERIFIED", "CANCELLED"].includes((m3.status || "").toUpperCase())
+        );
+        if (wrongTableBout) {
+          throw new ConflictError(
+            `Wrong table assignment: ${reg.athleteName}'s active bout is assigned to another table, not ${table.name}.`
+          );
+        }
+        const completedOnly = matchesInvolvingAthlete.some(
+          (m3) => ["COMPLETED", "VERIFIED"].includes((m3.status || "").toUpperCase())
+        );
+        if (completedOnly) {
+          throw new ConflictError(`${reg.athleteName}'s bout has already been completed.`);
+        }
+        throw new BadRequestError(`${reg.athleteName} has no active bout assigned to ${table.name}.`);
+      }
+    }
+    if (candidateBout.tableId && candidateBout.tableId !== tableId) {
+      throw new ConflictError(
+        `Wrong table assignment: this bout is assigned to another table, not ${table.name}.`
+      );
+    }
+    if (["COMPLETED", "VERIFIED"].includes((candidateBout.status || "").toUpperCase())) {
+      throw new ConflictError("This bout is already completed and locked.");
+    }
+    const corner = candidateBout.athleteAId === reg.athleteId ? "A" : "B";
+    await db.insert(auditLogs).values({
+      userId: actorId,
+      action: "REFEREE_TABLE_ATHLETE_QR_VERIFIED",
+      details: {
+        eventId,
+        tableId,
+        matchId: candidateBout.id,
+        athleteId: reg.athleteId,
+        corner,
+        profileQrCode: reg.profileQrCode
+      }
+    });
+    return {
+      verified: true,
+      eventId,
+      tableId,
+      tableName: table.name,
+      corner,
+      athlete: {
+        registrationId: reg.registrationId,
+        athleteId: reg.athleteId,
+        userId: reg.userId,
+        athleteName: reg.athleteName,
+        profileQrCode: reg.profileQrCode,
+        division: reg.division,
+        weightClass: reg.weightClass,
+        arm: reg.arm
+      },
+      bout: candidateBout
+    };
   }
 };
 
@@ -176772,7 +177730,7 @@ var FederationCertificateService = class {
         venue: event.venue,
         startDate: event.startDate ? event.startDate.toISOString() : null,
         endDate: event.endDate ? event.endDate.toISOString() : null,
-        sanctionNumber: `PAFF-SANC-${eventId.slice(0, 8).toUpperCase()}`
+        sanctionNumber: `ARM-SANC-${eventId.slice(0, 8).toUpperCase()}`
       },
       idempotencyKey
     };
@@ -176819,7 +177777,7 @@ var FederationCertificateService = class {
       }
     }
     const downloadUrl = await this.generatePresignedDownloadUrl(fileKey);
-    const certificateNumber = `PAFF-SANC-${eventId.slice(0, 8).toUpperCase()}`;
+    const certificateNumber = `ARM-SANC-${eventId.slice(0, 8).toUpperCase()}`;
     let certificateRecord;
     if (existing) {
       const [updated] = await db.update(officialCertificates).set({
@@ -176951,9 +177909,9 @@ var FederationCertificateService = class {
     if (documentId === "rulebook") {
       return {
         id: "rulebook",
-        title: "Official PAFF Competition Rulebook",
+        title: "Official Competition Rulebook",
         type: "PDF",
-        url: "https://armsphere.com/docs/rules/PAFF_Official_Rules_2026.pdf",
+        url: "https://armsphere.com/docs/rules/ArmSphere_Official_Rules_2026.pdf",
         status: "AVAILABLE"
       };
     }
@@ -176962,7 +177920,7 @@ var FederationCertificateService = class {
         id: "medical-clearance",
         title: "Athlete Medical Fitness Form",
         type: "PDF",
-        url: "https://armsphere.com/docs/compliance/PAFF_Medical_Clearance_Form.pdf",
+        url: "https://armsphere.com/docs/compliance/ArmSphere_Medical_Clearance_Form.pdf",
         status: "AVAILABLE"
       };
     }
@@ -176999,8 +177957,8 @@ var FederationCertificateService = class {
         id: "sanction-cert",
         title: "Official Sanction Certificate",
         type: "PDF",
-        tag: "PAFF OFFICIAL",
-        size: "Federation Seal",
+        tag: "HOST SANCTIONED",
+        size: "Organization Seal",
         status: sanctionDocStatus,
         isBlocked: sanctionDocStatus === "BLOCKED",
         blockedReason: sanctionReason,
@@ -177008,13 +177966,13 @@ var FederationCertificateService = class {
       },
       {
         id: "rulebook",
-        title: "PAFF Official Rulebook & Technical Standards",
+        title: "Official Competition Rulebook & Technical Standards",
         type: "PDF",
         tag: "OFFICIAL RULES",
         size: "2.4 MB",
         status: "AVAILABLE",
         isBlocked: false,
-        url: "https://armsphere.com/docs/rules/PAFF_Official_Rules_2026.pdf"
+        url: "https://armsphere.com/docs/rules/ArmSphere_Official_Rules_2026.pdf"
       },
       {
         id: "medical-clearance",
@@ -177024,7 +177982,7 @@ var FederationCertificateService = class {
         size: "1.1 MB",
         status: "AVAILABLE",
         isBlocked: false,
-        url: "https://armsphere.com/docs/compliance/PAFF_Medical_Clearance_Form.pdf"
+        url: "https://armsphere.com/docs/compliance/ArmSphere_Medical_Clearance_Form.pdf"
       }
     ];
   }
@@ -177063,6 +178021,15 @@ var createEventSchema = external_exports.object({
   organizerId: external_exports.string().uuid().optional(),
   status: external_exports.enum(["DRAFT", "PUBLISHED", "REGISTRATION_OPEN", "ONGOING", "COMPLETED"]).optional(),
   step1Config: external_exports.record(external_exports.any()).optional(),
+  weightCategories: external_exports.array(external_exports.any()).optional(),
+  formatCategory: external_exports.string().optional(),
+  eliminationSubFormat: external_exports.string().optional(),
+  entryFeePkr: external_exports.number().nonnegative().optional(),
+  awardsConfig: external_exports.record(external_exports.any()).optional(),
+  spectatorGateConfig: external_exports.record(external_exports.any()).optional(),
+  tableCount: external_exports.number().int().optional(),
+  tables: external_exports.array(external_exports.any()).optional(),
+  appliedAthletes: external_exports.array(external_exports.any()).optional(),
   idempotencyKey: external_exports.string().optional(),
   latitude: external_exports.number().min(-90).max(90).nullable().optional(),
   longitude: external_exports.number().min(-180).max(180).nullable().optional()
@@ -177083,6 +178050,15 @@ var editEventSchema = external_exports.object({
   organizerId: external_exports.string().uuid().optional(),
   status: external_exports.enum(["DRAFT", "PUBLISHED", "REGISTRATION_OPEN", "ONGOING", "COMPLETED"]).optional(),
   step1Config: external_exports.record(external_exports.any()).optional(),
+  weightCategories: external_exports.array(external_exports.any()).optional(),
+  formatCategory: external_exports.string().optional(),
+  eliminationSubFormat: external_exports.string().optional(),
+  entryFeePkr: external_exports.number().nonnegative().optional(),
+  awardsConfig: external_exports.record(external_exports.any()).optional(),
+  spectatorGateConfig: external_exports.record(external_exports.any()).optional(),
+  tableCount: external_exports.number().int().optional(),
+  tables: external_exports.array(external_exports.any()).optional(),
+  appliedAthletes: external_exports.array(external_exports.any()).optional(),
   idempotencyKey: external_exports.string().optional(),
   latitude: external_exports.number().min(-90).max(90).nullable().optional(),
   longitude: external_exports.number().min(-180).max(180).nullable().optional()
@@ -177093,11 +178069,26 @@ var registerAthleteSchema = external_exports.object({
   division: external_exports.string().min(2, "Division is required"),
   weightClass: external_exports.string().min(2, "Weight class is required"),
   arm: external_exports.enum(["LEFT", "RIGHT", "BOTH"]),
+  notes: external_exports.string().optional(),
+  allowUpdate: external_exports.boolean().optional()
+});
+var updateMyEventRegistrationSchema = external_exports.object({
+  athleteId: external_exports.string().uuid().optional(),
+  division: external_exports.string().min(2, "Division is required"),
+  weightClass: external_exports.string().min(2, "Weight class is required"),
+  arm: external_exports.enum(["LEFT", "RIGHT", "BOTH"]),
   notes: external_exports.string().optional()
 });
 var recordWeighInSchema = external_exports.object({
   registrationId: external_exports.string().uuid("Registration ID must be a valid UUID"),
   weight: external_exports.number().positive("Weight must be positive")
+});
+var verifyProfileQrSchema = external_exports.object({
+  profileQrCode: external_exports.string().min(1).optional(),
+  qrPayload: external_exports.string().min(1).optional(),
+  qrCode: external_exports.string().min(1).optional(),
+  accompanyingGuests: external_exports.number().int().min(0).max(20).optional(),
+  matchId: external_exports.string().uuid().optional()
 });
 var reassignSchema = external_exports.object({
   registrationId: external_exports.string().uuid("Registration ID must be valid"),
@@ -177154,12 +178145,15 @@ var TournamentController = class {
     try {
       const { status, timeframe, organizerId, organizationId } = req.query;
       const parsedTimeframe = timeframe === "upcoming" || timeframe === "past" ? timeframe : void 0;
-      const eventsList = await TournamentService.listEvents({
-        status: status?.toString(),
-        timeframe: parsedTimeframe,
-        organizerId: organizerId?.toString(),
-        organizationId: organizationId?.toString()
-      });
+      const eventsList = await TournamentService.listEvents(
+        {
+          status: status?.toString(),
+          timeframe: parsedTimeframe,
+          organizerId: organizerId?.toString(),
+          organizationId: organizationId?.toString()
+        },
+        req.user?.id
+      );
       res.json(eventsList);
     } catch (error2) {
       next(error2);
@@ -177168,8 +178162,38 @@ var TournamentController = class {
   static async getEvent(req, res, next) {
     try {
       const id = eventIdParamSchema.parse(req.params.id);
-      const event = await TournamentService.getEvent(id);
+      const event = await TournamentService.getEvent(id, req.user?.id);
       res.json(event);
+    } catch (error2) {
+      next(error2);
+    }
+  }
+  static async getMyEventRegistration(req, res, next) {
+    try {
+      const id = eventIdParamSchema.parse(req.params.id);
+      const result = await TournamentService.getMyEventRegistration(id, req.user.id);
+      res.json(result);
+    } catch (error2) {
+      next(error2);
+    }
+  }
+  static async updateMyEventRegistration(req, res, next) {
+    try {
+      const eventId = eventIdParamSchema.parse(req.params.id);
+      const validated = updateMyEventRegistrationSchema.parse(req.body);
+      const registration = await TournamentService.registerAthlete(
+        eventId,
+        validated.athleteId || req.user.id,
+        {
+          division: validated.division,
+          weightClass: validated.weightClass,
+          arm: validated.arm,
+          notes: validated.notes,
+          allowUpdate: true
+        },
+        { userId: req.user.id, role: req.user.role }
+      );
+      res.json(registration);
     } catch (error2) {
       next(error2);
     }
@@ -177247,7 +178271,8 @@ var TournamentController = class {
           division: validated.division,
           weightClass: validated.weightClass,
           arm: validated.arm,
-          notes: validated.notes
+          notes: validated.notes,
+          allowUpdate: validated.allowUpdate
         },
         { userId: req.user.id, role: req.user.role }
       );
@@ -177615,6 +178640,67 @@ var TournamentController = class {
       next(error2);
     }
   }
+  static async verifyEntranceQr(req, res, next) {
+    try {
+      const { id } = req.params;
+      const eventId = eventIdParamSchema.parse(id);
+      const parsed2 = verifyProfileQrSchema.parse(req.body ?? {});
+      const qrInput = (parsed2.profileQrCode ?? parsed2.qrPayload ?? parsed2.qrCode ?? "").trim();
+      if (!qrInput) {
+        throw new BadRequestError("profileQrCode or qrPayload is required.");
+      }
+      const result = await TournamentService.verifyEntranceQr(
+        eventId,
+        qrInput,
+        req.user.id,
+        parsed2.accompanyingGuests ?? 0
+      );
+      res.json({ success: true, data: result });
+    } catch (error2) {
+      next(error2);
+    }
+  }
+  static async scanWeighInQr(req, res, next) {
+    try {
+      const { id } = req.params;
+      const eventId = eventIdParamSchema.parse(id);
+      const parsed2 = verifyProfileQrSchema.parse(req.body ?? {});
+      const qrInput = (parsed2.profileQrCode ?? parsed2.qrPayload ?? parsed2.qrCode ?? "").trim();
+      if (!qrInput) {
+        throw new BadRequestError("profileQrCode or qrPayload is required.");
+      }
+      const result = await TournamentService.scanWeighInQr(
+        eventId,
+        qrInput,
+        req.user.id
+      );
+      res.json({ success: true, data: result });
+    } catch (error2) {
+      next(error2);
+    }
+  }
+  static async verifyTableAthleteQr(req, res, next) {
+    try {
+      const { id, tableId } = req.params;
+      const eventId = eventIdParamSchema.parse(id);
+      const parsedTableId = external_exports.string().uuid("Table ID must be a valid UUID").parse(tableId);
+      const parsed2 = verifyProfileQrSchema.parse(req.body ?? {});
+      const qrInput = (parsed2.profileQrCode ?? parsed2.qrPayload ?? parsed2.qrCode ?? "").trim();
+      if (!qrInput) {
+        throw new BadRequestError("profileQrCode or qrPayload is required.");
+      }
+      const result = await TournamentService.verifyTableAthleteQr({
+        eventId,
+        tableId: parsedTableId,
+        rawQrInput: qrInput,
+        matchId: parsed2.matchId,
+        actorId: req.user.id
+      });
+      res.json({ success: true, data: result });
+    } catch (error2) {
+      next(error2);
+    }
+  }
 };
 
 // apps/api/src/routes/tournament.ts
@@ -177651,6 +178737,16 @@ tournamentRouter.get(
   "/events/:id/registrations",
   authenticate,
   TournamentController.getEventRegistrations
+);
+tournamentRouter.get(
+  "/events/:id/my-registration",
+  authenticate,
+  TournamentController.getMyEventRegistration
+);
+tournamentRouter.patch(
+  "/events/:id/registrations/me",
+  authenticate,
+  TournamentController.updateMyEventRegistration
 );
 tournamentRouter.post(
   "/events/:id/cancel",
@@ -177716,6 +178812,24 @@ tournamentRouter.post(
   authenticate,
   requireRole(UserRole.REFEREE, UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
   TournamentController.certifyWeighIn
+);
+tournamentRouter.post(
+  "/events/:id/gate/verify-qr",
+  authenticate,
+  requireRole(UserRole.REFEREE, UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  TournamentController.verifyEntranceQr
+);
+tournamentRouter.post(
+  "/events/:id/weigh-in/scan-qr",
+  authenticate,
+  requireRole(UserRole.REFEREE, UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  TournamentController.scanWeighInQr
+);
+tournamentRouter.post(
+  "/events/:id/tables/:tableId/verify-athlete-qr",
+  authenticate,
+  requireRole(UserRole.REFEREE, UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  TournamentController.verifyTableAthleteQr
 );
 tournamentRouter.post(
   "/brackets",
@@ -179062,7 +180176,15 @@ var AdministrationController = class {
   }
   static async getAuditEvents(req, res, next) {
     try {
-      const list2 = await AdministrationService.getAuditEvents();
+      const actionType = typeof req.query?.actionType === "string" && req.query.actionType.trim().length > 0 ? req.query.actionType.trim() : void 0;
+      const actorId = typeof req.query?.actorId === "string" && req.query.actorId.trim().length > 0 ? req.query.actorId.trim() : void 0;
+      const parsedLimit = req.query?.limit !== void 0 ? Number.parseInt(String(req.query.limit), 10) : void 0;
+      const limit = parsedLimit !== void 0 && Number.isFinite(parsedLimit) && parsedLimit > 0 ? Math.min(parsedLimit, 250) : void 0;
+      const list2 = await AdministrationService.getAuditEvents({
+        actionType,
+        actorId,
+        limit
+      });
       res.status(200).json({ success: true, data: list2 });
     } catch (err) {
       next(err);
@@ -179154,6 +180276,73 @@ init_dist();
 init_env();
 import crypto19 from "crypto";
 var OrganizationService = class _OrganizationService {
+  static ACTIVE_EVENT_STATUSES = /* @__PURE__ */ new Set([
+    "REGISTRATION_OPEN",
+    "PUBLISHED",
+    "UPCOMING",
+    "LIVE",
+    "IN_PROGRESS",
+    "CHECK_IN"
+  ]);
+  static titleBelongsToOrg(title, org) {
+    const titleName = (title.name || "").toLowerCase();
+    const orgSlug = (org.slug || "").toLowerCase();
+    const orgName = (org.name || "").toLowerCase();
+    const orgProvince = (org.province || "").toLowerCase();
+    if (orgSlug && titleName.includes(orgSlug)) return true;
+    if (orgName && orgName.length >= 4 && titleName.includes(orgName)) return true;
+    if (orgProvince && orgProvince !== "international" && orgProvince !== "national" && titleName.includes(orgProvince)) {
+      return true;
+    }
+    return false;
+  }
+  static async enrichOrganizationsWithCounts(orgs) {
+    if (orgs.length === 0) return [];
+    const orgIds = orgs.map((o3) => o3.id).filter(Boolean);
+    const [orgEvents, allTitles] = await Promise.all([
+      orgIds.length > 0 ? db.select({
+        id: events.id,
+        organizationId: events.organizationId,
+        status: events.status
+      }).from(events).where(inArray(events.organizationId, orgIds)) : Promise.resolve([]),
+      db.select({
+        id: championshipTitles.id,
+        name: championshipTitles.name,
+        division: championshipTitles.division,
+        activeChampionId: championshipTitles.activeChampionId
+      }).from(championshipTitles)
+    ]);
+    const activeCountByOrg = /* @__PURE__ */ new Map();
+    const totalHostedByOrg = /* @__PURE__ */ new Map();
+    for (const evt of orgEvents) {
+      if (!evt.organizationId) continue;
+      const status = (evt.status || "").toUpperCase();
+      if (status !== "DRAFT" && status !== "CANCELLED") {
+        totalHostedByOrg.set(evt.organizationId, (totalHostedByOrg.get(evt.organizationId) || 0) + 1);
+      }
+      if (_OrganizationService.ACTIVE_EVENT_STATUSES.has(status)) {
+        activeCountByOrg.set(evt.organizationId, (activeCountByOrg.get(evt.organizationId) || 0) + 1);
+      }
+    }
+    return orgs.map((org) => {
+      const { accessCodeHash, ...safe } = org;
+      const activeEventsCount = activeCountByOrg.get(org.id) || 0;
+      const totalEventsHosted = totalHostedByOrg.get(org.id) || 0;
+      const titleBeltsCount = allTitles.filter(
+        (t) => _OrganizationService.titleBelongsToOrg(t, org)
+      ).length;
+      const foundedYear = org.foundationDate ? new Date(org.foundationDate).getUTCFullYear() : org.createdAt ? new Date(org.createdAt).getUTCFullYear() : void 0;
+      return {
+        ...safe,
+        promoterName: safe.presidentName || null,
+        foundedYear,
+        activeEventsCount,
+        totalEventsHosted,
+        sanctionedBeltsCount: titleBeltsCount,
+        titleBeltsCount
+      };
+    });
+  }
   /**
    * Public list of approved organizations for selection.
    * NEVER returns accessCodeHash.
@@ -179177,7 +180366,80 @@ var OrganizationService = class _OrganizationService {
       foundationDate: organizations.foundationDate,
       createdAt: organizations.createdAt
     }).from(organizations).where(eq(organizations.status, "APPROVED"));
-    return rows.map(({ accessCodeHash, ...safe }) => safe);
+    return _OrganizationService.enrichOrganizationsWithCounts(rows);
+  }
+  /**
+   * Featured organizations for Discover & Directory surfaces.
+   */
+  static async listFeaturedOrganizations() {
+    const approved = await _OrganizationService.listApprovedOrganizations();
+    return approved.sort((a5, b5) => {
+      const eventDiff = (b5.activeEventsCount || 0) - (a5.activeEventsCount || 0);
+      if (eventDiff !== 0) return eventDiff;
+      return (b5.titleBeltsCount || 0) - (a5.titleBeltsCount || 0);
+    });
+  }
+  /**
+   * Real championship belts and reigning titleholders for an organization.
+   */
+  static async getChampionsForOrganization(idOrSlug) {
+    const org = await _OrganizationService.getById(idOrSlug);
+    const allTitles = await db.select().from(championshipTitles);
+    const matchedTitles = allTitles.filter(
+      (t) => _OrganizationService.titleBelongsToOrg(t, org)
+    );
+    if (matchedTitles.length === 0) return [];
+    const titleIds = matchedTitles.map((t) => t.id);
+    const holderIds = Array.from(
+      new Set(
+        matchedTitles.map((t) => t.activeChampionId).filter((id) => Boolean(id))
+      )
+    );
+    const [holders, lineageRows] = await Promise.all([
+      holderIds.length > 0 ? db.select().from(athleteProfiles).where(inArray(athleteProfiles.id, holderIds)) : Promise.resolve([]),
+      db.select().from(beltLineage).where(inArray(beltLineage.titleId, titleIds)).orderBy(desc(beltLineage.acquiredAt))
+    ]);
+    const lineageAthleteIds = Array.from(
+      new Set(lineageRows.map((l3) => l3.athleteId).filter(Boolean))
+    );
+    const missingAthleteIds = lineageAthleteIds.filter(
+      (id) => !holderIds.includes(id)
+    );
+    const extraAthletes = missingAthleteIds.length > 0 ? await db.select().from(athleteProfiles).where(inArray(athleteProfiles.id, missingAthleteIds)) : [];
+    const athleteMap = new Map(
+      [...holders, ...extraAthletes].map((a5) => [a5.id, a5])
+    );
+    const lineageByTitle = /* @__PURE__ */ new Map();
+    for (const row of lineageRows) {
+      const arr = lineageByTitle.get(row.titleId) || [];
+      arr.push(row);
+      lineageByTitle.set(row.titleId, arr);
+    }
+    return matchedTitles.map((title) => {
+      const holder = title.activeChampionId ? athleteMap.get(title.activeChampionId) : void 0;
+      const history = lineageByTitle.get(title.id) || [];
+      const currentReign = history.find((h5) => !h5.vacatedAt) || history[0];
+      const armUpper = (title.arm || "RIGHT").toUpperCase();
+      const holderElo = holder ? armUpper === "LEFT" ? holder.leftArmElo : holder.rightArmElo : null;
+      return {
+        id: title.id,
+        organizationId: org.id,
+        titleName: title.name,
+        weightClass: title.weightClass,
+        division: title.division,
+        arm: armUpper,
+        holderId: holder?.id || null,
+        holderName: holder?.displayName || "Vacant",
+        holderElo: holderElo ?? null,
+        defenses: currentReign?.defensesCount ?? 0,
+        awardedAt: currentReign?.acquiredAt ? new Date(currentReign.acquiredAt).toISOString().slice(0, 10) : null,
+        lineage: history.map((h5) => ({
+          champion: athleteMap.get(h5.athleteId)?.displayName || "Unknown Athlete",
+          event: h5.reason || "Sanctioned Championship",
+          date: h5.acquiredAt ? new Date(h5.acquiredAt).toISOString().slice(0, 10) : ""
+        }))
+      };
+    });
   }
   /**
    * Verifies pre-shared access code and issues scoped 24h operational token.
@@ -179188,15 +180450,7 @@ var OrganizationService = class _OrganizationService {
     }
     const trimmedId = organizationId.trim();
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmedId);
-    const slugAliasMap = {
-      "org_paff_national": "paff",
-      "pakistan-armwrestling-federation": "paff",
-      "org_evw_global": "east-vs-west",
-      "east-vs-west-armwrestling": "east-vs-west",
-      "punjab-armwrestling": "punjab-armwrestling",
-      "kpk-armwrestling": "kpk-armwrestling"
-    };
-    const targetSlug = slugAliasMap[trimmedId.toLowerCase()] || trimmedId.toLowerCase();
+    const targetSlug = trimmedId.toLowerCase();
     const [org] = await db.select().from(organizations).where(
       isUuid ? eq(organizations.id, trimmedId) : eq(organizations.slug, targetSlug)
     ).limit(1);
@@ -179278,7 +180532,8 @@ var OrganizationService = class _OrganizationService {
     if (!org) {
       throw new NotFoundError("Organization not found.");
     }
-    return org;
+    const [enriched] = await _OrganizationService.enrichOrganizationsWithCounts([org]);
+    return enriched;
   }
   /**
    * Public creation of a new sanctioning organization.
@@ -179308,7 +180563,7 @@ var OrganizationService = class _OrganizationService {
       contactEmail: data.contactEmail?.trim() || null,
       contactPhone: data.contactPhone?.trim() || null,
       websiteUrl: data.websiteUrl?.trim() || null,
-      sanctioningBody: data.sanctioningBody?.trim() || "WAF / IFA Affiliated",
+      sanctioningBody: data.sanctioningBody?.trim() || "ArmSphere Verified",
       accessCodeHash: codeHash,
       status: "APPROVED",
       isOnboarded: false
@@ -179366,53 +180621,36 @@ var OrganizationService = class _OrganizationService {
     return { plainAccessCode: plainCode };
   }
   /**
-   * Ensures canonical federations exist with pre-seeded access codes,
-   * and backfills legacy tournaments (where organizationId is null) to PAFF.
+   * Ensures baseline test-only organizations exist in isolated test environments.
+   * Never creates unauthorized third-party federation claims or alters real production events.
    */
   static async seedCanonicalOrganizationsIfEmpty() {
+    if (process.env.NODE_ENV !== "test") return;
     const existing = await db.select({ id: organizations.id }).from(organizations).limit(1);
     if (existing.length === 0) {
-      const canonicals = [
+      const testFixtures = [
         {
-          name: "Pakistan Armwrestling Federation (PAFF)",
-          slug: "paff",
-          code: "PAFF-2026-X89K",
+          name: "ArmSphere National League",
+          slug: "armsphere-national-league",
+          code: "ANL-2026-TEST",
           province: "Islamabad",
           city: "Islamabad",
-          presidentName: "Qaiser Khan",
-          sanctioningBody: "WAF / IFA Recognized National Federation"
+          presidentName: "League Director",
+          sanctioningBody: "ArmSphere Verified"
         },
         {
-          name: "East vs West Armwrestling",
-          slug: "east-vs-west",
-          code: "EVW-2026-GOLD",
-          province: "International",
-          city: "Istanbul",
-          presidentName: "Engin Terzi",
-          sanctioningBody: "World Elite Armwrestling Promotion"
-        },
-        {
-          name: "Punjab Armwrestling Federation",
-          slug: "punjab-armwrestling",
-          code: "PUNJAB-2026-ARM",
+          name: "Punjab Armwrestling League",
+          slug: "punjab-armwrestling-league",
+          code: "PAL-2026-TEST",
           province: "Punjab",
           city: "Lahore",
-          presidentName: "Mian Usman",
-          sanctioningBody: "PAFF Provincial Affiliate"
-        },
-        {
-          name: "KPK Armwrestling Federation",
-          slug: "kpk-armwrestling",
-          code: "KPK-2026-ARM",
-          province: "KPK",
-          city: "Peshawar",
-          presidentName: "Fazal Wahab",
-          sanctioningBody: "PAFF Provincial Affiliate"
+          presidentName: "Regional Director",
+          sanctioningBody: "ArmSphere Verified"
         }
       ];
-      for (const item of canonicals) {
-        const [existing2] = await db.select({ id: organizations.id }).from(organizations).where(eq(organizations.slug, item.slug)).limit(1);
-        if (!existing2) {
+      for (const item of testFixtures) {
+        const [found] = await db.select({ id: organizations.id }).from(organizations).where(eq(organizations.slug, item.slug)).limit(1);
+        if (!found) {
           const hash = await hashPassword(item.code);
           await db.insert(organizations).values({
             name: item.name,
@@ -179427,13 +180665,6 @@ var OrganizationService = class _OrganizationService {
           });
         }
       }
-    }
-    try {
-      const [paffOrg] = await db.select({ id: organizations.id }).from(organizations).where(eq(organizations.slug, "paff")).limit(1);
-      if (paffOrg) {
-        await db.update(events).set({ organizationId: paffOrg.id }).where(isNull(events.organizationId));
-      }
-    } catch (_) {
     }
   }
 };
@@ -179476,6 +180707,14 @@ var OrganizationController = class {
   static async listApproved(req, res, next) {
     try {
       const orgs = await OrganizationService.listApprovedOrganizations();
+      res.json({ success: true, data: orgs });
+    } catch (err) {
+      next(err);
+    }
+  }
+  static async listFeatured(req, res, next) {
+    try {
+      const orgs = await OrganizationService.listFeaturedOrganizations();
       res.json({ success: true, data: orgs });
     } catch (err) {
       next(err);
@@ -179539,6 +180778,15 @@ var OrganizationController = class {
       const { id } = req.params;
       const eventsList = await TournamentService.listEvents({ organizationId: id });
       res.json({ success: true, data: eventsList });
+    } catch (err) {
+      next(err);
+    }
+  }
+  static async listChampionsForOrganization(req, res, next) {
+    try {
+      const { id } = req.params;
+      const champions = await OrganizationService.getChampionsForOrganization(id);
+      res.json({ success: true, data: champions });
     } catch (err) {
       next(err);
     }
@@ -180871,7 +182119,7 @@ var tournamentPaths = {
                 title: { type: "string", example: "Pacific Regional Armwrestling Open" },
                 startDate: { type: "string", format: "date-time", example: "2026-08-15T09:00:00Z" },
                 location: { type: "string", example: "Richmond Olympic Oval, BC" },
-                ruleset: { type: "string", example: "WAF Standard" }
+                ruleset: { type: "string", example: "Standard Double Elimination" }
               }
             }
           }
@@ -181610,12 +182858,28 @@ var PaymentController = class {
   }
   static async getPaymentMethods(req, res, next) {
     try {
+      if (!isStripeConfigured()) {
+        res.status(200).json({
+          success: true,
+          enabled: false,
+          reason: "not_configured",
+          meta: { paymentConfigured: false },
+          data: []
+        });
+        return;
+      }
       const stripe = getStripe();
       const userId = req.user.id;
       const email = req.user.email;
       const [profile] = await db.select().from(athleteProfiles).where(and(eq(athleteProfiles.userId, userId), eq(athleteProfiles.isDeleted, false))).limit(1);
       if (!profile) {
-        throw new NotFoundError("Athlete profile not found");
+        res.status(200).json({
+          success: true,
+          enabled: true,
+          meta: { paymentConfigured: true },
+          data: []
+        });
+        return;
       }
       let stripeCustomerId = profile.stripeCustomerId;
       if (!stripeCustomerId) {
@@ -181637,8 +182901,25 @@ var PaymentController = class {
         expMonth: pm.card?.exp_month || 0,
         expYear: pm.card?.exp_year || 0
       }));
-      res.status(200).json({ success: true, data: formattedMethods });
+      res.status(200).json({
+        success: true,
+        enabled: true,
+        meta: { paymentConfigured: true },
+        data: formattedMethods
+      });
     } catch (error2) {
+      const msg = String(error2?.message || "");
+      if (error2?.type === "StripeAuthenticationError" || msg.includes("STRIPE_SECRET_KEY") || msg.includes("Invalid API Key")) {
+        logger.warn({ err: msg }, "Stripe gateway not configured; returning graceful disabled state");
+        res.status(200).json({
+          success: true,
+          enabled: false,
+          reason: "not_configured",
+          meta: { paymentConfigured: false },
+          data: []
+        });
+        return;
+      }
       next(error2);
     }
   }
@@ -181671,6 +182952,16 @@ var PaymentController = class {
   }
   static async createSetupIntent(req, res, next) {
     try {
+      if (!isStripeConfigured()) {
+        res.status(200).json({
+          success: true,
+          enabled: false,
+          reason: "not_configured",
+          meta: { paymentConfigured: false },
+          clientSecret: null
+        });
+        return;
+      }
       const stripe = getStripe();
       const userId = req.user.id;
       const email = req.user.email;
@@ -181693,10 +182984,23 @@ var PaymentController = class {
       });
       res.status(201).json({
         success: true,
+        enabled: true,
+        meta: { paymentConfigured: true },
         clientSecret: setupIntent.client_secret,
         customerId: stripeCustomerId
       });
     } catch (error2) {
+      const msg = String(error2?.message || "");
+      if (error2?.type === "StripeAuthenticationError" || msg.includes("STRIPE_SECRET_KEY") || msg.includes("Invalid API Key")) {
+        res.status(200).json({
+          success: true,
+          enabled: false,
+          reason: "not_configured",
+          meta: { paymentConfigured: false },
+          clientSecret: null
+        });
+        return;
+      }
       next(error2);
     }
   }
@@ -182164,7 +183468,9 @@ var issueCertificationSchema = external_exports.object({
   certificationLevel: external_exports.string().min(1, "Certification level is required"),
   issuedAt: external_exports.string().datetime({ message: "Issued at must be a valid ISO datetime string" }),
   expiresAt: external_exports.string().datetime({ message: "Expires at must be a valid ISO datetime string" }).optional(),
-  issuingBody: external_exports.string().min(1, "Issuing body is required")
+  issuingBody: external_exports.string().min(1, "Issuing body is required"),
+  issuingOrganizationId: external_exports.string().uuid().optional(),
+  notes: external_exports.string().max(1e3).optional()
 });
 var RefereeCertificationController = class {
   /**
@@ -183964,13 +185270,901 @@ sparringInviteRouter.post(
 
 // apps/api/src/routes/organization.ts
 var import_express26 = __toESM(require_express2(), 1);
+
+// apps/api/src/controllers/organizationCertification.ts
+init_zod();
+init_dist();
+
+// apps/api/src/services/organizationCertification.ts
+init_drizzle_orm();
+init_db2();
+init_dist2();
+init_dist();
+init_dist3();
+init_userRole();
+var UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+var OrganizationCertificationService = class {
+  /**
+   * Strictly verifies that the authenticated actor is authorized to manage
+   * referee certifications for the target organization.
+   */
+  static async assertCanManageOrganization(actor, orgId) {
+    if (!UUID_RE.test(orgId)) {
+      throw new BadRequestError("Invalid organization ID format.");
+    }
+    const [org] = await db.select().from(organizations).where(eq(organizations.id, orgId)).limit(1);
+    if (!org) {
+      throw new NotFoundError("Organization not found.");
+    }
+    const actorRoleUpper = (actor.role || "").toUpperCase();
+    const isAdminRole = ["SYSTEM_ADMIN", "NATIONAL_DIRECTOR"].includes(actorRoleUpper);
+    let isAuthorized = false;
+    let issuedByUserId = null;
+    if (actor.orgId && actor.orgId === orgId) {
+      isAuthorized = true;
+      issuedByUserId = null;
+    } else if (actorRoleUpper === "TOURNAMENT_OPERATOR" && actor.id === orgId) {
+      isAuthorized = true;
+      issuedByUserId = null;
+    } else if (isAdminRole) {
+      const hasAdminGrant = await UserRoleService.hasActiveRole(
+        actor.id,
+        [UserRole.SYSTEM_ADMIN, UserRole.NATIONAL_DIRECTOR],
+        actor.role
+      );
+      if (hasAdminGrant) {
+        isAuthorized = true;
+        const [adminUser] = await db.select({ id: users.id }).from(users).where(eq(users.id, actor.id)).limit(1);
+        issuedByUserId = adminUser?.id ?? null;
+      }
+    }
+    if (!isAuthorized) {
+      throw new ForbiddenError(
+        "You are not authorized to manage referee certifications for this organization."
+      );
+    }
+    return { org, issuedByUserId };
+  }
+  /**
+   * GET /organizations/:orgId/certifications/requests
+   * Lists incoming and reviewed referee certification requests targeted at orgId.
+   */
+  static async listRequests(actor, orgId, statusFilter) {
+    const { org } = await this.assertCanManageOrganization(actor, orgId);
+    const conditions = [
+      eq(roleApplications.targetOrganizationId, orgId),
+      eq(roleApplications.role, UserRole.REFEREE)
+    ];
+    if (statusFilter && statusFilter.toUpperCase() !== "ALL") {
+      conditions.push(eq(roleApplications.status, statusFilter.toUpperCase()));
+    }
+    const rows = await db.select({
+      id: roleApplications.id,
+      userId: roleApplications.userId,
+      athleteId: roleApplications.athleteId,
+      targetOrganizationId: roleApplications.targetOrganizationId,
+      role: roleApplications.role,
+      status: roleApplications.status,
+      experienceDetails: roleApplications.experienceDetails,
+      certificationNumber: roleApplications.certificationNumber,
+      reviewNotes: roleApplications.reviewNotes,
+      reviewedAt: roleApplications.reviewedAt,
+      createdAt: roleApplications.createdAt,
+      updatedAt: roleApplications.updatedAt,
+      userFullName: users.fullName,
+      userEmail: users.email,
+      userProvince: users.province,
+      profileId: athleteProfiles.id,
+      displayName: athleteProfiles.displayName,
+      city: athleteProfiles.city,
+      province: athleteProfiles.province,
+      weightClass: athleteProfiles.weightClass,
+      rightArmElo: athleteProfiles.rightArmElo,
+      leftArmElo: athleteProfiles.leftArmElo,
+      profilePhoto: athleteProfiles.profilePhoto
+    }).from(roleApplications).leftJoin(users, eq(roleApplications.userId, users.id)).leftJoin(athleteProfiles, eq(roleApplications.userId, athleteProfiles.userId)).where(and(...conditions)).orderBy(desc(roleApplications.createdAt));
+    return rows.map((r5) => ({
+      id: r5.id,
+      userId: r5.userId,
+      athleteId: r5.athleteId || r5.profileId || null,
+      targetOrganizationId: r5.targetOrganizationId,
+      targetOrganizationName: org.name,
+      role: r5.role,
+      status: r5.status,
+      experienceDetails: r5.experienceDetails,
+      certificationNumber: r5.certificationNumber,
+      reviewNotes: r5.reviewNotes,
+      reviewedAt: r5.reviewedAt,
+      createdAt: r5.createdAt,
+      updatedAt: r5.updatedAt,
+      fullName: r5.displayName || r5.userFullName || "Registered Athlete",
+      displayName: r5.displayName || r5.userFullName || "Registered Athlete",
+      email: r5.userEmail || null,
+      city: r5.city || null,
+      province: r5.province || r5.userProvince || null,
+      weightClass: r5.weightClass || null,
+      rightArmElo: r5.rightArmElo ?? 1200,
+      leftArmElo: r5.leftArmElo ?? 1200,
+      profilePhoto: r5.profilePhoto || null
+    }));
+  }
+  /**
+   * POST /organizations/:orgId/certifications/requests/:requestId/review
+   * Approves or declines a referee certification request targeted at orgId.
+   */
+  static async reviewRequest(actor, orgId, requestId, input) {
+    const { org, issuedByUserId } = await this.assertCanManageOrganization(actor, orgId);
+    if (!UUID_RE.test(requestId)) {
+      throw new BadRequestError("Invalid request ID format.");
+    }
+    const [request] = await db.select().from(roleApplications).where(
+      and(
+        eq(roleApplications.id, requestId),
+        eq(roleApplications.targetOrganizationId, orgId),
+        eq(roleApplications.role, UserRole.REFEREE)
+      )
+    ).limit(1);
+    if (!request) {
+      throw new NotFoundError("Referee certification request not found for this organization.");
+    }
+    if (request.status !== "PENDING") {
+      throw new BadRequestError(
+        `This request has already been reviewed (status: ${request.status}).`
+      );
+    }
+    const now = /* @__PURE__ */ new Date();
+    const isApprove = input.decision === "APPROVE";
+    const nextStatus = isApprove ? "APPROVED" : "REJECTED";
+    const reviewNotes = (input.reviewNotes || input.notes || "").trim() || null;
+    const [updatedRequest] = await db.update(roleApplications).set({
+      status: nextStatus,
+      reviewerId: issuedByUserId,
+      reviewedAt: now,
+      reviewNotes,
+      updatedAt: now
+    }).where(eq(roleApplications.id, requestId)).returning();
+    let certification = null;
+    let roleGrant = null;
+    if (isApprove) {
+      const level = (input.certificationLevel || "Regional Official").trim();
+      let expiresDate = null;
+      if (input.expiresAt) {
+        expiresDate = new Date(input.expiresAt);
+        if (isNaN(expiresDate.getTime())) {
+          throw new BadRequestError("Invalid expiration date format.");
+        }
+      }
+      let athleteId = request.athleteId || null;
+      if (!athleteId) {
+        const [profile] = await db.select({ id: athleteProfiles.id }).from(athleteProfiles).where(eq(athleteProfiles.userId, request.userId)).limit(1);
+        athleteId = profile?.id ?? null;
+      }
+      const [existingActive] = await db.select().from(refereeCertifications).where(
+        and(
+          eq(refereeCertifications.userId, request.userId),
+          eq(refereeCertifications.issuingOrganizationId, org.id),
+          eq(refereeCertifications.status, "ACTIVE")
+        )
+      ).limit(1);
+      if (existingActive) {
+        const [updatedCert] = await db.update(refereeCertifications).set({
+          certificationLevel: level,
+          issuingBody: org.name,
+          issuedByUserId,
+          issuedAt: now,
+          expiresAt: expiresDate,
+          notes: reviewNotes,
+          updatedAt: now
+        }).where(eq(refereeCertifications.id, existingActive.id)).returning();
+        certification = updatedCert;
+      } else {
+        const [insertedCert] = await db.insert(refereeCertifications).values({
+          userId: request.userId,
+          athleteId,
+          issuingOrganizationId: org.id,
+          issuedByUserId,
+          certificationLevel: level,
+          issuedAt: now,
+          expiresAt: expiresDate,
+          issuingBody: org.name,
+          status: "ACTIVE",
+          notes: reviewNotes
+        }).returning();
+        certification = insertedCert;
+      }
+      roleGrant = await UserRoleService.grantRole(
+        request.userId,
+        UserRole.REFEREE,
+        issuedByUserId || void 0,
+        {
+          issuingOrganizationId: org.id,
+          issuingOrganizationName: org.name,
+          certificationId: certification.id,
+          certificationLevel: level,
+          applicationId: request.id,
+          approvedAt: now.toISOString()
+        }
+      );
+      if (issuedByUserId) {
+        await db.insert(auditLogs).values({
+          userId: issuedByUserId,
+          action: "ORG_REFEREE_CERT_APPROVED",
+          details: {
+            orgId: org.id,
+            orgName: org.name,
+            requestId: request.id,
+            targetUserId: request.userId,
+            certificationId: certification.id,
+            certificationLevel: level
+          }
+        }).catch(() => {
+        });
+      }
+      try {
+        const { NotificationService: NotificationService2 } = await Promise.resolve().then(() => (init_notification(), notification_exports));
+        await NotificationService2.createNotification({
+          userId: request.userId,
+          title: `Official Referee Certification Issued`,
+          content: `${org.name} approved your referee certification (${level}). You can now officiate events as a certified referee.`,
+          priority: "HIGH",
+          category: "SYSTEM",
+          metadata: {
+            organizationId: org.id,
+            organizationName: org.name,
+            certificationId: certification.id,
+            certificationLevel: level
+          }
+        });
+      } catch (err) {
+        logger.warn({ err, requestId }, "Failed to send approval notification");
+      }
+    } else {
+      try {
+        const { NotificationService: NotificationService2 } = await Promise.resolve().then(() => (init_notification(), notification_exports));
+        await NotificationService2.createNotification({
+          userId: request.userId,
+          title: `Referee Certification Request Update`,
+          content: `${org.name} declined your referee certification request.${reviewNotes ? ` Note: ${reviewNotes}` : ""}`,
+          priority: "MEDIUM",
+          category: "SYSTEM",
+          metadata: {
+            organizationId: org.id,
+            organizationName: org.name,
+            requestId: request.id
+          }
+        });
+      } catch (err) {
+        logger.warn({ err, requestId }, "Failed to send decline notification");
+      }
+    }
+    return {
+      request: {
+        ...updatedRequest,
+        targetOrganizationName: org.name
+      },
+      certification: certification ? {
+        ...certification,
+        issuingOrganizationName: org.name
+      } : null,
+      roleGrant
+    };
+  }
+  /**
+   * GET /organizations/:orgId/certifications/athletes/search?q=...
+   * Real case-insensitive PostgreSQL search across registered ArmSphere athletes.
+   */
+  static async searchAthletes(actor, orgId, query, limit = 25) {
+    await this.assertCanManageOrganization(actor, orgId);
+    const safeLimit = Math.min(Math.max(limit || 25, 1), 50);
+    const trimmed = (query || "").trim();
+    const conditions = [
+      eq(athleteProfiles.isDeleted, false),
+      eq(users.isActive, true)
+    ];
+    if (trimmed.length > 0) {
+      const pattern = `%${trimmed}%`;
+      conditions.push(
+        or(
+          ilike(athleteProfiles.displayName, pattern),
+          ilike(users.fullName, pattern),
+          ilike(athleteProfiles.city, pattern),
+          ilike(athleteProfiles.province, pattern)
+        )
+      );
+    }
+    const rows = await db.select({
+      athleteId: athleteProfiles.id,
+      userId: athleteProfiles.userId,
+      displayName: athleteProfiles.displayName,
+      fullName: users.fullName,
+      city: athleteProfiles.city,
+      province: athleteProfiles.province,
+      weightClass: athleteProfiles.weightClass,
+      rightArmElo: athleteProfiles.rightArmElo,
+      leftArmElo: athleteProfiles.leftArmElo,
+      profilePhoto: athleteProfiles.profilePhoto
+    }).from(athleteProfiles).innerJoin(users, eq(athleteProfiles.userId, users.id)).where(and(...conditions)).orderBy(desc(athleteProfiles.rightArmElo), desc(athleteProfiles.createdAt)).limit(safeLimit);
+    if (rows.length === 0) {
+      return [];
+    }
+    const userIds = rows.map((r5) => r5.userId);
+    const existingOrgCerts = await db.select({
+      id: refereeCertifications.id,
+      userId: refereeCertifications.userId,
+      certificationLevel: refereeCertifications.certificationLevel,
+      status: refereeCertifications.status
+    }).from(refereeCertifications).where(
+      and(
+        eq(refereeCertifications.issuingOrganizationId, orgId),
+        eq(refereeCertifications.status, "ACTIVE"),
+        inArray(refereeCertifications.userId, userIds)
+      )
+    );
+    const certByUser = new Map(existingOrgCerts.map((c5) => [c5.userId, c5]));
+    return rows.map((r5) => {
+      const activeCert = certByUser.get(r5.userId) || null;
+      return {
+        athleteId: r5.athleteId,
+        userId: r5.userId,
+        displayName: r5.displayName || r5.fullName,
+        fullName: r5.fullName || r5.displayName,
+        city: r5.city,
+        province: r5.province,
+        weightClass: r5.weightClass,
+        rightArmElo: r5.rightArmElo ?? 1200,
+        leftArmElo: r5.leftArmElo ?? 1200,
+        profilePhoto: r5.profilePhoto || null,
+        alreadyCertifiedByOrg: !!activeCert,
+        activeCertificationId: activeCert?.id ?? null,
+        activeCertificationLevel: activeCert?.certificationLevel ?? null
+      };
+    });
+  }
+  /**
+   * POST /organizations/:orgId/certifications/grant
+   * Directly certifies a searched athlete as an Official Referee issued by orgId.
+   */
+  static async grantCertification(actor, orgId, input) {
+    const { org, issuedByUserId } = await this.assertCanManageOrganization(actor, orgId);
+    const level = (input.certificationLevel || "").trim();
+    if (!level) {
+      throw new BadRequestError("Certification level is required.");
+    }
+    let targetUserId = input.userId?.trim() || null;
+    let targetAthleteId = input.athleteId?.trim() || null;
+    if (!targetUserId && !targetAthleteId) {
+      throw new BadRequestError("Either athleteId or userId is required.");
+    }
+    if (targetAthleteId) {
+      if (!UUID_RE.test(targetAthleteId)) {
+        throw new BadRequestError("Invalid athleteId format.");
+      }
+      const [profile] = await db.select({ id: athleteProfiles.id, userId: athleteProfiles.userId }).from(athleteProfiles).where(eq(athleteProfiles.id, targetAthleteId)).limit(1);
+      if (profile) {
+        targetUserId = profile.userId;
+        targetAthleteId = profile.id;
+      } else if (!targetUserId) {
+        const [u] = await db.select({ id: users.id }).from(users).where(eq(users.id, targetAthleteId)).limit(1);
+        if (u) {
+          targetUserId = u.id;
+          targetAthleteId = null;
+        }
+      }
+    }
+    if (!targetUserId || !UUID_RE.test(targetUserId)) {
+      throw new NotFoundError("Target athlete user account not found.");
+    }
+    const [targetUser] = await db.select({ id: users.id, fullName: users.fullName, email: users.email }).from(users).where(eq(users.id, targetUserId)).limit(1);
+    if (!targetUser) {
+      throw new NotFoundError("Target user not found.");
+    }
+    if (!targetAthleteId) {
+      const [profile] = await db.select({ id: athleteProfiles.id }).from(athleteProfiles).where(eq(athleteProfiles.userId, targetUserId)).limit(1);
+      targetAthleteId = profile?.id ?? null;
+    }
+    const [existingActive] = await db.select({ id: refereeCertifications.id }).from(refereeCertifications).where(
+      and(
+        eq(refereeCertifications.userId, targetUserId),
+        eq(refereeCertifications.issuingOrganizationId, org.id),
+        eq(refereeCertifications.status, "ACTIVE")
+      )
+    ).limit(1);
+    if (existingActive) {
+      throw new ConflictError(
+        `This athlete already holds an active referee certification issued by ${org.name}.`
+      );
+    }
+    let expiresDate = null;
+    if (input.expiresAt) {
+      expiresDate = new Date(input.expiresAt);
+      if (isNaN(expiresDate.getTime())) {
+        throw new BadRequestError("Invalid expiration date format.");
+      }
+    }
+    const now = /* @__PURE__ */ new Date();
+    const notes = input.notes?.trim() || null;
+    const [certification] = await db.insert(refereeCertifications).values({
+      userId: targetUserId,
+      athleteId: targetAthleteId,
+      issuingOrganizationId: org.id,
+      issuedByUserId,
+      certificationLevel: level,
+      issuedAt: now,
+      expiresAt: expiresDate,
+      issuingBody: org.name,
+      status: "ACTIVE",
+      notes
+    }).returning();
+    await db.update(roleApplications).set({
+      status: "APPROVED",
+      reviewerId: issuedByUserId,
+      reviewedAt: now,
+      reviewNotes: notes || `Directly certified as ${level} by ${org.name}`,
+      updatedAt: now
+    }).where(
+      and(
+        eq(roleApplications.userId, targetUserId),
+        eq(roleApplications.targetOrganizationId, org.id),
+        eq(roleApplications.role, UserRole.REFEREE),
+        eq(roleApplications.status, "PENDING")
+      )
+    );
+    const roleGrant = await UserRoleService.grantRole(
+      targetUserId,
+      UserRole.REFEREE,
+      issuedByUserId || void 0,
+      {
+        issuingOrganizationId: org.id,
+        issuingOrganizationName: org.name,
+        certificationId: certification.id,
+        certificationLevel: level,
+        grantedDirectly: true,
+        grantedAt: now.toISOString()
+      }
+    );
+    if (issuedByUserId) {
+      await db.insert(auditLogs).values({
+        userId: issuedByUserId,
+        action: "ORG_REFEREE_CERT_GRANTED",
+        details: {
+          orgId: org.id,
+          orgName: org.name,
+          targetUserId,
+          targetAthleteId,
+          certificationId: certification.id,
+          certificationLevel: level
+        }
+      }).catch(() => {
+      });
+    }
+    try {
+      const { NotificationService: NotificationService2 } = await Promise.resolve().then(() => (init_notification(), notification_exports));
+      await NotificationService2.createNotification({
+        userId: targetUserId,
+        title: `Official Referee Certification Granted`,
+        content: `${org.name} certified you as an Official Referee (${level}). Your certification is now active in ArmSphere.`,
+        priority: "HIGH",
+        category: "SYSTEM",
+        metadata: {
+          organizationId: org.id,
+          organizationName: org.name,
+          certificationId: certification.id,
+          certificationLevel: level
+        }
+      });
+    } catch (err) {
+      logger.warn({ err, targetUserId }, "Failed to send direct grant notification");
+    }
+    return {
+      certification: {
+        ...certification,
+        issuingOrganizationName: org.name,
+        fullName: targetUser.fullName
+      },
+      roleGrant
+    };
+  }
+  /**
+   * GET /organizations/:orgId/certifications
+   * Lists all real referee certifications issued by orgId (authenticated org management view).
+   */
+  static async listCertifications(actor, orgId, statusFilter) {
+    const { org } = await this.assertCanManageOrganization(actor, orgId);
+    const conditions = [eq(refereeCertifications.issuingOrganizationId, orgId)];
+    if (statusFilter && statusFilter.toUpperCase() !== "ALL") {
+      conditions.push(eq(refereeCertifications.status, statusFilter.toUpperCase()));
+    }
+    const rows = await db.select({
+      id: refereeCertifications.id,
+      userId: refereeCertifications.userId,
+      athleteId: refereeCertifications.athleteId,
+      issuingOrganizationId: refereeCertifications.issuingOrganizationId,
+      certificationLevel: refereeCertifications.certificationLevel,
+      issuedAt: refereeCertifications.issuedAt,
+      expiresAt: refereeCertifications.expiresAt,
+      issuingBody: refereeCertifications.issuingBody,
+      status: refereeCertifications.status,
+      notes: refereeCertifications.notes,
+      createdAt: refereeCertifications.createdAt,
+      updatedAt: refereeCertifications.updatedAt,
+      userFullName: users.fullName,
+      userEmail: users.email,
+      profileId: athleteProfiles.id,
+      displayName: athleteProfiles.displayName,
+      city: athleteProfiles.city,
+      province: athleteProfiles.province,
+      profilePhoto: athleteProfiles.profilePhoto
+    }).from(refereeCertifications).leftJoin(users, eq(refereeCertifications.userId, users.id)).leftJoin(athleteProfiles, eq(refereeCertifications.userId, athleteProfiles.userId)).where(and(...conditions)).orderBy(desc(refereeCertifications.issuedAt));
+    return rows.map((r5) => ({
+      id: r5.id,
+      userId: r5.userId,
+      athleteId: r5.athleteId || r5.profileId || null,
+      issuingOrganizationId: r5.issuingOrganizationId,
+      issuingOrganizationName: org.name,
+      issuingBody: org.name,
+      certificationLevel: r5.certificationLevel,
+      issuedAt: r5.issuedAt,
+      expiresAt: r5.expiresAt,
+      status: r5.status,
+      notes: r5.notes,
+      createdAt: r5.createdAt,
+      updatedAt: r5.updatedAt,
+      fullName: r5.displayName || r5.userFullName || "Certified Official",
+      displayName: r5.displayName || r5.userFullName || "Certified Official",
+      email: r5.userEmail || null,
+      city: r5.city || null,
+      province: r5.province || null,
+      profilePhoto: r5.profilePhoto || null
+    }));
+  }
+  /**
+   * PATCH /organizations/:orgId/certifications/:certId/revoke
+   * Revokes a certification issued by orgId (strictly scoped to orgId).
+   */
+  static async revokeCertification(actor, orgId, certId, reason) {
+    const { org, issuedByUserId } = await this.assertCanManageOrganization(actor, orgId);
+    if (!UUID_RE.test(certId)) {
+      throw new BadRequestError("Invalid certification ID format.");
+    }
+    const [existing] = await db.select().from(refereeCertifications).where(
+      and(
+        eq(refereeCertifications.id, certId),
+        eq(refereeCertifications.issuingOrganizationId, org.id)
+      )
+    ).limit(1);
+    if (!existing) {
+      throw new NotFoundError(
+        "Certification not found for this organization."
+      );
+    }
+    if (existing.status === "REVOKED") {
+      return {
+        ...existing,
+        issuingOrganizationName: org.name
+      };
+    }
+    const now = /* @__PURE__ */ new Date();
+    const cleanedReason = reason?.trim() || null;
+    const updatedNotes = cleanedReason ? existing.notes ? `${existing.notes}
+Revoked: ${cleanedReason}` : `Revoked: ${cleanedReason}` : existing.notes;
+    const [updated] = await db.update(refereeCertifications).set({
+      status: "REVOKED",
+      notes: updatedNotes,
+      updatedAt: now
+    }).where(
+      and(
+        eq(refereeCertifications.id, certId),
+        eq(refereeCertifications.issuingOrganizationId, org.id)
+      )
+    ).returning();
+    if (issuedByUserId) {
+      await db.insert(auditLogs).values({
+        userId: issuedByUserId,
+        action: "ORG_REFEREE_CERT_REVOKED",
+        details: {
+          orgId: org.id,
+          orgName: org.name,
+          certificationId: certId,
+          targetUserId: existing.userId,
+          reason: cleanedReason
+        }
+      }).catch(() => {
+      });
+    }
+    try {
+      const { NotificationService: NotificationService2 } = await Promise.resolve().then(() => (init_notification(), notification_exports));
+      await NotificationService2.createNotification({
+        userId: existing.userId,
+        title: `Referee Certification Revoked`,
+        content: `${org.name} has revoked your ${existing.certificationLevel} referee certification.${cleanedReason ? ` Reason: ${cleanedReason}` : ""}`,
+        priority: "HIGH",
+        category: "SYSTEM",
+        metadata: {
+          organizationId: org.id,
+          organizationName: org.name,
+          certificationId: certId
+        }
+      });
+    } catch (err) {
+      logger.warn({ err, certId }, "Failed to send revocation notification");
+    }
+    return {
+      ...updated,
+      issuingOrganizationName: org.name
+    };
+  }
+  /**
+   * Public read-only list of ACTIVE certified officials for Organization Profile screens.
+   * Exposes only non-sensitive public fields (no emails, no private review notes).
+   */
+  static async listPublicOfficials(orgIdOrSlug) {
+    let org = null;
+    if (UUID_RE.test(orgIdOrSlug)) {
+      const [found] = await db.select({ id: organizations.id, name: organizations.name }).from(organizations).where(eq(organizations.id, orgIdOrSlug)).limit(1);
+      org = found || null;
+    } else {
+      const [found] = await db.select({ id: organizations.id, name: organizations.name }).from(organizations).where(eq(organizations.slug, orgIdOrSlug)).limit(1);
+      org = found || null;
+    }
+    if (!org) {
+      throw new NotFoundError("Organization not found.");
+    }
+    const rows = await db.select({
+      id: refereeCertifications.id,
+      userId: refereeCertifications.userId,
+      athleteId: refereeCertifications.athleteId,
+      issuingOrganizationId: refereeCertifications.issuingOrganizationId,
+      certificationLevel: refereeCertifications.certificationLevel,
+      issuedAt: refereeCertifications.issuedAt,
+      status: refereeCertifications.status,
+      userFullName: users.fullName,
+      profileId: athleteProfiles.id,
+      displayName: athleteProfiles.displayName,
+      city: athleteProfiles.city,
+      province: athleteProfiles.province,
+      profilePhoto: athleteProfiles.profilePhoto
+    }).from(refereeCertifications).leftJoin(users, eq(refereeCertifications.userId, users.id)).leftJoin(athleteProfiles, eq(refereeCertifications.userId, athleteProfiles.userId)).where(
+      and(
+        eq(refereeCertifications.issuingOrganizationId, org.id),
+        eq(refereeCertifications.status, "ACTIVE")
+      )
+    ).orderBy(desc(refereeCertifications.issuedAt));
+    return rows.map((r5) => ({
+      id: r5.id,
+      userId: r5.userId,
+      athleteId: r5.athleteId || r5.profileId || null,
+      issuingOrganizationId: r5.issuingOrganizationId,
+      issuingOrganizationName: org.name,
+      certificationLevel: r5.certificationLevel,
+      issuedAt: r5.issuedAt,
+      status: r5.status,
+      fullName: r5.displayName || r5.userFullName || "Certified Official",
+      displayName: r5.displayName || r5.userFullName || "Certified Official",
+      city: r5.city || null,
+      province: r5.province || null,
+      profilePhoto: r5.profilePhoto || null
+    }));
+  }
+};
+
+// apps/api/src/controllers/organizationCertification.ts
+var ReviewRequestSchema = external_exports.object({
+  decision: external_exports.string().transform((v) => v.trim().toUpperCase()).refine((v) => ["APPROVE", "APPROVED", "REJECT", "REJECTED"].includes(v), {
+    message: "Decision must be APPROVE or REJECT."
+  }).transform((v) => v.startsWith("APPROV") ? "APPROVE" : "REJECT"),
+  certificationLevel: external_exports.string().trim().min(2).max(100).optional(),
+  reviewNotes: external_exports.string().trim().max(1e3).optional(),
+  notes: external_exports.string().trim().max(1e3).optional(),
+  expiresAt: external_exports.string().nullable().optional()
+});
+var GrantCertificationSchema = external_exports.object({
+  athleteId: external_exports.string().uuid().optional(),
+  userId: external_exports.string().uuid().optional(),
+  certificationLevel: external_exports.string().trim().min(2, "Certification level is required.").max(100),
+  notes: external_exports.string().trim().max(1e3).optional(),
+  expiresAt: external_exports.string().nullable().optional()
+}).refine((data) => Boolean(data.athleteId || data.userId), {
+  message: "Either athleteId or userId is required."
+});
+var RevokeCertificationSchema = external_exports.object({
+  reason: external_exports.string().trim().max(1e3).optional()
+});
+var OrganizationCertificationController = class {
+  /**
+   * GET /organizations/:orgId/certifications/requests
+   */
+  static async listRequests(req, res, next) {
+    try {
+      if (!req.user) throw new UnauthorizedError("Authentication required.");
+      const orgId = req.params.orgId;
+      const status = typeof req.query.status === "string" ? req.query.status : void 0;
+      const requests = await OrganizationCertificationService.listRequests(req.user, orgId, status);
+      res.status(200).json({
+        success: true,
+        data: requests
+      });
+    } catch (error2) {
+      next(error2);
+    }
+  }
+  /**
+   * POST /organizations/:orgId/certifications/requests/:requestId/review
+   */
+  static async reviewRequest(req, res, next) {
+    try {
+      if (!req.user) throw new UnauthorizedError("Authentication required.");
+      const orgId = req.params.orgId;
+      const requestId = req.params.requestId;
+      const parsed2 = ReviewRequestSchema.safeParse(req.body);
+      if (!parsed2.success) {
+        throw parsed2.error;
+      }
+      const result = await OrganizationCertificationService.reviewRequest(
+        req.user,
+        orgId,
+        requestId,
+        parsed2.data
+      );
+      res.status(200).json({
+        success: true,
+        data: result
+      });
+    } catch (error2) {
+      next(error2);
+    }
+  }
+  /**
+   * GET /organizations/:orgId/certifications/athletes/search?q=...
+   */
+  static async searchAthletes(req, res, next) {
+    try {
+      if (!req.user) throw new UnauthorizedError("Authentication required.");
+      const orgId = req.params.orgId;
+      const q3 = typeof req.query.q === "string" ? req.query.q : "";
+      const limit = typeof req.query.limit === "string" ? parseInt(req.query.limit, 10) || 25 : 25;
+      const athletes = await OrganizationCertificationService.searchAthletes(
+        req.user,
+        orgId,
+        q3,
+        limit
+      );
+      res.status(200).json({
+        success: true,
+        data: athletes
+      });
+    } catch (error2) {
+      next(error2);
+    }
+  }
+  /**
+   * POST /organizations/:orgId/certifications/grant
+   */
+  static async grantCertification(req, res, next) {
+    try {
+      if (!req.user) throw new UnauthorizedError("Authentication required.");
+      const orgId = req.params.orgId;
+      const parsed2 = GrantCertificationSchema.safeParse(req.body);
+      if (!parsed2.success) {
+        throw parsed2.error;
+      }
+      const result = await OrganizationCertificationService.grantCertification(
+        req.user,
+        orgId,
+        parsed2.data
+      );
+      res.status(201).json({
+        success: true,
+        data: result
+      });
+    } catch (error2) {
+      next(error2);
+    }
+  }
+  /**
+   * GET /organizations/:orgId/certifications
+   */
+  static async listCertifications(req, res, next) {
+    try {
+      if (!req.user) throw new UnauthorizedError("Authentication required.");
+      const orgId = req.params.orgId;
+      const status = typeof req.query.status === "string" ? req.query.status : void 0;
+      const certs = await OrganizationCertificationService.listCertifications(
+        req.user,
+        orgId,
+        status
+      );
+      res.status(200).json({
+        success: true,
+        data: certs
+      });
+    } catch (error2) {
+      next(error2);
+    }
+  }
+  /**
+   * PATCH /organizations/:orgId/certifications/:certId/revoke
+   */
+  static async revokeCertification(req, res, next) {
+    try {
+      if (!req.user) throw new UnauthorizedError("Authentication required.");
+      const orgId = req.params.orgId;
+      const certId = req.params.certId;
+      const parsed2 = RevokeCertificationSchema.safeParse(req.body || {});
+      if (!parsed2.success) {
+        throw parsed2.error;
+      }
+      const revoked = await OrganizationCertificationService.revokeCertification(
+        req.user,
+        orgId,
+        certId,
+        parsed2.data.reason
+      );
+      res.status(200).json({
+        success: true,
+        data: revoked
+      });
+    } catch (error2) {
+      next(error2);
+    }
+  }
+  /**
+   * GET /organizations/:id/officials (public safe list of active certified officials)
+   */
+  static async listPublicOfficials(req, res, next) {
+    try {
+      const orgIdOrSlug = req.params.id;
+      const officials = await OrganizationCertificationService.listPublicOfficials(orgIdOrSlug);
+      res.status(200).json({
+        success: true,
+        data: officials
+      });
+    } catch (error2) {
+      next(error2);
+    }
+  }
+};
+
+// apps/api/src/routes/organization.ts
 var organizationRouter = (0, import_express26.Router)();
 organizationRouter.get("/", OrganizationController.listApproved);
+organizationRouter.get("/featured", OrganizationController.listFeatured);
 organizationRouter.post("/", OrganizationController.create);
 organizationRouter.post("/verify-access", OrganizationController.verifyAccess);
-organizationRouter.get("/:id", OrganizationController.getById);
+organizationRouter.get(
+  "/:orgId/certifications/requests",
+  authenticate,
+  OrganizationCertificationController.listRequests
+);
+organizationRouter.post(
+  "/:orgId/certifications/requests/:requestId/review",
+  authenticate,
+  OrganizationCertificationController.reviewRequest
+);
+organizationRouter.get(
+  "/:orgId/certifications/athletes/search",
+  authenticate,
+  OrganizationCertificationController.searchAthletes
+);
+organizationRouter.post(
+  "/:orgId/certifications/grant",
+  authenticate,
+  OrganizationCertificationController.grantCertification
+);
+organizationRouter.get(
+  "/:orgId/certifications",
+  authenticate,
+  OrganizationCertificationController.listCertifications
+);
+organizationRouter.patch(
+  "/:orgId/certifications/:certId/revoke",
+  authenticate,
+  OrganizationCertificationController.revokeCertification
+);
+organizationRouter.get("/:id/officials", OrganizationCertificationController.listPublicOfficials);
 organizationRouter.get("/:id/events", OrganizationController.listEventsForOrganization);
+organizationRouter.get("/:id/champions", OrganizationController.listChampionsForOrganization);
 organizationRouter.post("/:id/onboard", authenticate, OrganizationController.onboard);
+organizationRouter.get("/:id", OrganizationController.getById);
 
 // apps/api/src/routes/radar.ts
 var import_express27 = __toESM(require_express2(), 1);
@@ -184128,8 +186322,37 @@ var RadarService = class {
       }
     }
     let allProfiles = [];
+    const excludedUserIds = /* @__PURE__ */ new Set();
     if (want("ATHLETE") || want("BEACON")) {
-      allProfiles = await db.select().from(athleteProfiles).where(eq(athleteProfiles.isDeleted, false));
+      const [profilesRows, verificationRows, userRows, sanctionRows] = await Promise.all([
+        Promise.resolve(
+          db.select().from(athleteProfiles).where(eq(athleteProfiles.isDeleted, false))
+        ).catch(() => []),
+        Promise.resolve(db.select().from(athleteVerifications)).catch(() => []),
+        Promise.resolve(
+          db.select({ id: users.id, isActive: users.isActive }).from(users)
+        ).catch(() => []),
+        Promise.resolve(db.select().from(sanctions)).catch(() => [])
+      ]);
+      allProfiles = profilesRows;
+      for (const u of userRows) {
+        if (u && u.isActive === false) {
+          excludedUserIds.add(u.id);
+        }
+      }
+      for (const v of verificationRows) {
+        const status = (v?.status || "").toString().toUpperCase();
+        if (status === "REJECTED" || status === "SUSPENDED") {
+          if (v.athleteId) excludedUserIds.add(v.athleteId);
+        }
+      }
+      for (const s2 of sanctionRows) {
+        const sType = (s2?.type || "").toString().toUpperCase();
+        const isActiveSanction = !s2?.expiresAt || new Date(s2.expiresAt).getTime() > now.getTime();
+        if (isActiveSanction && (sType === "SUSPENSION" || sType === "PERMANENT_BAN" || sType === "BAN")) {
+          if (s2.userId) excludedUserIds.add(s2.userId);
+        }
+      }
     }
     const profileByUserId = /* @__PURE__ */ new Map();
     for (const p3 of allProfiles) {
@@ -184137,6 +186360,7 @@ var RadarService = class {
     }
     if (want("ATHLETE")) {
       for (const p3 of allProfiles) {
+        if (excludedUserIds.has(p3.userId) || excludedUserIds.has(p3.id)) continue;
         if (p3.isSearchable === false) continue;
         if (typeof p3.latitude !== "number" || typeof p3.longitude !== "number") continue;
         const visibility = normalizeLocationVisibility(p3.locationVisibility);
@@ -184170,6 +186394,7 @@ var RadarService = class {
     if (want("BEACON")) {
       const activeBeacons = await db.select().from(radarBeacons).where(gt(radarBeacons.expiresAt, now));
       for (const b5 of activeBeacons) {
+        if (excludedUserIds.has(b5.userId)) continue;
         if (typeof b5.latitude !== "number" || typeof b5.longitude !== "number") continue;
         if (!isWithinBounds(b5.latitude, b5.longitude, bounds)) continue;
         const ownerProfile = profileByUserId.get(b5.userId);
@@ -184236,11 +186461,13 @@ var RadarService = class {
     }
     const now = /* @__PURE__ */ new Date();
     let expiresAt;
-    if (input.expiresAt) {
+    if (typeof input.durationHours === "number" && Number.isFinite(input.durationHours)) {
+      const hours = Math.min(336, Math.max(1, input.durationHours));
+      expiresAt = new Date(now.getTime() + hours * 60 * 60 * 1e3);
+    } else if (input.expiresAt) {
       expiresAt = input.expiresAt;
     } else {
-      const hours = Math.min(336, Math.max(1, input.durationHours ?? 6));
-      expiresAt = new Date(now.getTime() + hours * 60 * 60 * 1e3);
+      expiresAt = new Date(now.getTime() + 6 * 60 * 60 * 1e3);
     }
     if (isNaN(expiresAt.getTime()) || expiresAt <= now) {
       throw new BadRequestError("Beacon expiration timestamp must be in the future.");
@@ -184370,6 +186597,7 @@ radarRouter.delete("/beacons/:id", authenticate, RadarController.deleteBeacon);
 // apps/api/src/app.ts
 init_env();
 var app = (0, import_express28.default)();
+app.set("trust proxy", true);
 app.disable("x-powered-by");
 app.use(securityHeaders);
 app.use((req, res, next) => {
@@ -184471,6 +186699,7 @@ app.use("/api/v1/support", supportRouter);
 app.use("/sparring-invites", sparringInviteRouter);
 app.use("/api/v1/sparring-invites", sparringInviteRouter);
 app.use("/organizations", organizationRouter);
+app.use("/api/organizations", organizationRouter);
 app.use("/api/v1/organizations", organizationRouter);
 app.use("/radar", radarRouter);
 app.use("/api/radar", radarRouter);

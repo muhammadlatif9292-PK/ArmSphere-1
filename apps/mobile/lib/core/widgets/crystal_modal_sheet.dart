@@ -27,6 +27,7 @@ class CrystalModalSheet extends StatelessWidget {
   final Key? primaryActionKey;
   final EdgeInsetsGeometry contentPadding;
   final double maxHeightFactor;
+  final Color accentColor;
 
   const CrystalModalSheet({
     super.key,
@@ -43,7 +44,36 @@ class CrystalModalSheet extends StatelessWidget {
     this.primaryActionKey,
     this.contentPadding = const EdgeInsets.fromLTRB(18, 12, 18, 18),
     this.maxHeightFactor = 0.88,
+    this.accentColor = AppTheme.goldPrimary,
   });
+
+  /// Convenience static presenter wrapping [CrystalModalSheet] inside a
+  /// frosted G6 modal bottom sheet.
+  static Future<T?> show<T>({
+    required BuildContext context,
+    required String title,
+    String? subtitle,
+    IconData? icon,
+    Color accentColor = AppTheme.goldPrimary,
+    required WidgetBuilder builder,
+    bool isScrollControlled = true,
+    bool useRootNavigator = true,
+  }) {
+    return showModalBottomSheet<T>(
+      context: context,
+      useRootNavigator: useRootNavigator,
+      isScrollControlled: isScrollControlled,
+      backgroundColor: Colors.transparent,
+      barrierColor: AppTheme.overlayG6Barrier,
+      builder: (sheetCtx) => CrystalModalSheet(
+        title: title,
+        subtitle: subtitle,
+        headerIcon: icon,
+        accentColor: accentColor,
+        child: builder(sheetCtx),
+      ),
+    );
+  }
 
   /// Unfocuses any active text field or selection in the current focus tree.
   static void unfocusActiveInput([BuildContext? context]) {
@@ -189,17 +219,17 @@ class CrystalModalSheet extends StatelessWidget {
                           width: 34,
                           height: 34,
                           decoration: BoxDecoration(
-                            color: AppTheme.goldPrimary.withValues(alpha: 0.14),
+                            color: accentColor.withValues(alpha: 0.14),
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
-                              color: AppTheme.goldPrimary.withValues(alpha: 0.45),
+                              color: accentColor.withValues(alpha: 0.45),
                               width: 1.0,
                             ),
                           ),
                           child: Icon(
                             headerIcon,
                             size: 18,
-                            color: AppTheme.goldPrimary,
+                            color: accentColor,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -210,11 +240,11 @@ class CrystalModalSheet extends StatelessWidget {
                           children: [
                             Text(
                               title,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: AppTheme.fontDisplay,
                                 fontWeight: FontWeight.w800,
                                 fontSize: 14,
-                                color: AppTheme.goldPrimary,
+                                color: accentColor,
                                 letterSpacing: 0.8,
                               ),
                             ),

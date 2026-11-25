@@ -209,8 +209,43 @@ describe("Multi-Role Account Architecture & Authoritative Authorization", () => 
     );
   });
 
-  // Case 7: User can submit role application for REFEREE (returns 201 with status PENDING)
+  // Case 7: User can submit role application for REFEREE with registered targetOrganizationId (returns 201 with status PENDING)
   it("Case 7: User can submit role application for REFEREE (returns 201 with status PENDING)", async () => {
+    testDbStore.users.push({ ...athleteUser });
+
+    const orgsRes = await request(app).get("/organizations");
+    expect(orgsRes.status).toBe(200);
+    const orgs = orgsRes.body.data ?? orgsRes.body;
+    const targetOrg = orgs[0];
+    expect(targetOrg).toBeDefined();
+
+    const athleteToken = generateAccessToken(
+      athleteUser.id,
+      athleteUser.email,
+      athleteUser.role,
+      env.JWT_ACCESS_SECRET
+    );
+
+    const res = await request(app)
+      .post("/auth/roles/apply")
+      .set("Authorization", `Bearer ${athleteToken}`)
+      .send({
+        role: UserRole.REFEREE,
+        targetOrganizationId: targetOrg.id,
+        experienceDetails: "Officiated 5 regional tournaments in Punjab.",
+        certificationNumber: "ARM-REF-2026-99",
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.role).toBe(UserRole.REFEREE);
+    expect(res.body.data.status).toBe("PENDING");
+    expect(res.body.data.targetOrganizationId).toBe(targetOrg.id);
+    expect(res.body.data.certificationNumber).toBe("ARM-REF-2026-99");
+  });
+
+  // Case 7b: REFEREE role application without targetOrganizationId is rejected with 400
+  it("Case 7b: REFEREE role application requires selecting a registered organization (throws 400)", async () => {
     testDbStore.users.push({ ...athleteUser });
 
     const athleteToken = generateAccessToken(
@@ -225,24 +260,29 @@ describe("Multi-Role Account Architecture & Authoritative Authorization", () => 
       .set("Authorization", `Bearer ${athleteToken}`)
       .send({
         role: UserRole.REFEREE,
-        experienceDetails: "Officiated 5 regional tournaments in Punjab.",
-        certificationNumber: "PAFF-REF-2026-99",
+        experienceDetails: "Officiated 5 regional tournaments.",
       });
 
-    expect(res.status).toBe(201);
-    expect(res.body.success).toBe(true);
-    expect(res.body.data.role).toBe(UserRole.REFEREE);
-    expect(res.body.data.status).toBe("PENDING");
-    expect(res.body.data.certificationNumber).toBe("PAFF-REF-2026-99");
+    expect(res.status).toBe(400);
+    expect(res.body.message || res.body.detail).toContain(
+      "Please select a registered ArmSphere organization"
+    );
   });
 
   // Case 8: User cannot submit duplicate PENDING application for the same role
   it("Case 8: User cannot submit duplicate PENDING application for the same role (throws 409 Conflict)", async () => {
     testDbStore.users.push({ ...athleteUser });
+
+    const orgsRes = await request(app).get("/organizations");
+    const orgs = orgsRes.body.data ?? orgsRes.body;
+    const targetOrg = orgs[0];
+    expect(targetOrg).toBeDefined();
+
     testDbStore.roleApplications.push({
       id: uuidv4(),
       userId: athleteUser.id,
       role: UserRole.REFEREE,
+      targetOrganizationId: targetOrg.id,
       status: "PENDING",
       createdAt: new Date(),
     });
@@ -259,22 +299,23 @@ describe("Multi-Role Account Architecture & Authoritative Authorization", () => 
       .set("Authorization", `Bearer ${athleteToken}`)
       .send({
         role: UserRole.REFEREE,
+        targetOrganizationId: targetOrg.id,
         experienceDetails: "Another application for referee.",
       });
 
     expect(res.status).toBe(409);
     expect(res.body.message || res.body.detail).toContain(
-      "An application for the role of REFEREE is already pending review."
+      "already pending review"
     );
   });
 
-  // Case 9: User cannot apply for a role they already actively possess
+  // Case 9: User cannot apply for a non-referee role they already actively possess
   it("Case 9: User cannot apply for a role they already actively possess (throws 400 BadRequest)", async () => {
     testDbStore.users.push({ ...athleteUser });
     testDbStore.userRoleGrants.push({
       id: uuidv4(),
       userId: athleteUser.id,
-      role: UserRole.REFEREE,
+      role: UserRole.TOURNAMENT_OPERATOR,
       status: "ACTIVE",
       grantedAt: new Date(),
     });
@@ -290,13 +331,13 @@ describe("Multi-Role Account Architecture & Authoritative Authorization", () => 
       .post("/auth/roles/apply")
       .set("Authorization", `Bearer ${athleteToken}`)
       .send({
-        role: UserRole.REFEREE,
-        experienceDetails: "Applying again for referee.",
+        role: UserRole.TOURNAMENT_OPERATOR,
+        experienceDetails: "Applying again for operator.",
       });
 
     expect(res.status).toBe(400);
     expect(res.body.message || res.body.detail).toContain(
-      "You already have an active verified grant for the role of REFEREE."
+      "You already have an active verified grant for the role of TOURNAMENT_OPERATOR."
     );
   });
 

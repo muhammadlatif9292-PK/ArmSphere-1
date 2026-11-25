@@ -556,7 +556,7 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        expect(find.text('Arena Operations'), findsOneWidget);
+        expect(find.text('Bouts'), findsOneWidget);
         expect(find.text('Match Oversight'), findsOneWidget);
         expect(find.text('Belt Titles'), findsOneWidget);
         expect(find.text('Tournaments'), findsOneWidget);
@@ -605,7 +605,7 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        expect(find.text('Federation Governance'), findsOneWidget);
+        expect(find.text('Open Dispute'), findsOneWidget);
         expect(find.text('Disputes 1'), findsOneWidget);
         expect(find.text('Moderation 0'), findsOneWidget);
         expect(find.text('Gyms 0'), findsOneWidget);

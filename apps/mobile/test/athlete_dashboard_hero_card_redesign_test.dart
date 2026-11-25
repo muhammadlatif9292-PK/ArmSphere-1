@@ -184,7 +184,7 @@ void main() {
         // Verify hierarchy: Name, Credentials, Club/Country, Prominent ELO callout, 4-stat ribbon
         expect(find.text('Levan Saginashvili'), findsOneWidget);
         expect(find.text('VERIFIED'), findsOneWidget);
-        expect(find.text('PAFF COMPETITOR'), findsOneWidget);
+        expect(find.text('ARMSPHERE ATHLETE'), findsOneWidget);
         expect(find.text('GEO'), findsOneWidget);
         expect(find.textContaining('Titan Pullers Tbilisi'), findsOneWidget);
         expect(find.text('R-ARM RATING'), findsOneWidget);

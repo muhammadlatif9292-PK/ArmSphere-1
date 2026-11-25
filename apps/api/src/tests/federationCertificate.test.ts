@@ -368,7 +368,7 @@ describe("Federation Certificate & Sanction Closure Subsystem", () => {
       );
 
       expect(result.status).toBe("ISSUED");
-      expect(result.certificateNumber).toMatch(/^ARMS-SANC-/);
+      expect(result.certificateNumber).toMatch(/^ARM-SANC-/);
       expect(result.sha256Hash).toBe(expectedHash);
       expect(result.fileKey).toBe(`documents/certificates/sanction-${mockEventId}.pdf`);
 

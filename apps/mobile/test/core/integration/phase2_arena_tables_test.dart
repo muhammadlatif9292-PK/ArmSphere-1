@@ -9,11 +9,11 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('Phase 2 / Item 2.1: Live Arena Tables Real-Data Binding Integration Tests', () {
-    const testTournamentId = 'tourney_paff_national_2026';
+    const testTournamentId = 'tourney_national_2026';
 
     final mockEventDetail = {
       'id': testTournamentId,
-      'name': 'PAFF All-Pakistan National Armwrestling Finals 2026',
+      'name': 'All-Pakistan National Armwrestling Finals 2026',
       'status': 'ONGOING',
       'venueName': 'Liaquat Gymnasium',
       'city': 'Islamabad',
@@ -24,6 +24,29 @@ void main() {
       'registeredCount': 32,
       'capacity': 64,
       'description': 'Premier national armwrestling championship live telemetry.',
+      'weightCategories': [
+        {
+          'id': 'wc_85_r',
+          'label': '-85 KG',
+          'division': 'SENIOR',
+          'arm': 'RIGHT',
+          'enabled': true,
+        },
+        {
+          'id': 'wc_75_l',
+          'label': '-75 KG',
+          'division': 'SENIOR',
+          'arm': 'LEFT',
+          'enabled': true,
+        },
+        {
+          'id': 'wc_105_r',
+          'label': '+105 KG',
+          'division': 'SENIOR',
+          'arm': 'RIGHT',
+          'enabled': true,
+        },
+      ],
     };
 
     final mockLiveTables = [
@@ -184,8 +207,10 @@ void main() {
       expect(find.text('Sultan Al-Balushi (PK)'), findsOneWidget);
       expect(find.text('Danyal Qureshi (PK)'), findsOneWidget);
 
-      // Tap '-85 KG' filter chip
-      await tester.tap(find.text('-85 KG'));
+      // Tap '-85 KG • Right Arm' filter chip in filter tray
+      final chipFinder85 = find.text('-85 KG • Right Arm').first;
+      await tester.ensureVisible(chipFinder85);
+      await tester.tap(chipFinder85);
       await settleScreen(tester);
 
       // Only -85 KG match remains visible
@@ -193,7 +218,9 @@ void main() {
       expect(find.text('Danyal Qureshi (PK)'), findsNothing);
 
       // Tap 'ALL' filter chip to restore full view
-      await tester.tap(find.text('ALL'));
+      final allChipFinder = find.text('ALL').first;
+      await tester.ensureVisible(allChipFinder);
+      await tester.tap(allChipFinder);
       await settleScreen(tester);
 
       expect(find.text('Sultan Al-Balushi (PK)'), findsOneWidget);
@@ -218,12 +245,14 @@ void main() {
       );
       await settleScreen(tester);
 
-      // Tap '+105 KG' filter chip
-      await tester.tap(find.text('+105 KG'));
+      // Tap '+105 KG • Right Arm' filter chip in filter tray
+      final chipFinder105 = find.text('+105 KG • Right Arm').first;
+      await tester.ensureVisible(chipFinder105);
+      await tester.tap(chipFinder105);
       await settleScreen(tester);
 
       // Category-specific empty state is displayed
-      expect(find.text('No Live Tables in +105 KG'), findsOneWidget);
+      expect(find.text('No Live Tables in +105 KG • Right Arm'), findsOneWidget);
       expect(find.text('Select "ALL" to view active tables across all divisions.'), findsOneWidget);
     });
 
